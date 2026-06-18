@@ -11,7 +11,9 @@
 │ @iatl: arranque                      │
 │  - profile-stack                      │
 │  - query.js --ticket                  │
+│  - query.js --working-branches        │
 │  - query.js --peer-discussions        │
+│  - context/active-tickets.md          │
 │  - ingest session                     │
 └──────┬───────────────────────────────┘
        ▼
@@ -33,6 +35,9 @@
        ├── RECHAZADO ──► @iatl rediseña ──► (volver arriba)
        │
        ├── APTO_CON_CAMBIOS ──► @iatl ajusta Propuesta
+       │
+       ├── Desacuerdo @iatl ↔ Daniel ──► síntesis C → una Propuesta HITL
+       │   (ver docs/peer-gate-deadlock-protocol.md)
        │
        └── APTO_PROPUESTA ──► continuar
        ▼

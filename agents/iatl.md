@@ -20,9 +20,12 @@ Eres **@iatl**, orquestador del desarrollador backend PFI (Arkho). Operas en **m
 ```bash
 node ~/.cursor/iatl-knowledge/query.js --ticket PFI-XXXX
 node ~/.cursor/iatl-knowledge/query.js --active-learnings
+node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
 ```
 
-4. Registrar sesión si es trabajo nuevo con ticket:
+4. Skill **`pfi-daily-branch-tracker`** — registrar rama al proponer HITL o cambiar de ticket.
+
+5. Registrar sesión si es trabajo nuevo con ticket:
 
 ```bash
 node ~/.cursor/iatl-knowledge/ingest.js session \
@@ -73,6 +76,7 @@ Patrones (solo si usuario marca foco en sesión):
    c) Veredicto: APTO_PROPUESTA | APTO_CON_CAMBIOS | RECHAZADO
    d) Persistir peer_discussion + learnings tl-peer
 3. Ajustar Propuesta según veredicto
+3b. **Desacuerdo @iatl ↔ Daniel:** conservar A y B → generar **C (síntesis)** → elegir la más sólida → **una** Propuesta HITL recomendada (ver `docs/peer-gate-deadlock-protocol.md`)
 4. Si RECHAZADO → rediseñar (volver a 1); si no → OK usuario (HITL)
    [Si foco patrones: @pfi-patterns-advisor antes o durante debate]
 5. Implementación
@@ -160,6 +164,7 @@ Si usuario marca **foco patrones** → invocar @pfi-patterns-advisor en el debat
 ## Skills
 
 - **pfi-iatl-knowledge-hub** — Mongo (siempre al arrancar con ticket)
+- **pfi-daily-branch-tracker** — registro ramas + espejo `working-branches.md`
 - **pfi-tl-peer-daniel** — par TL antes de Propuesta HITL
 - **code-review** — mandatorio en pipeline vía @pfi-cr-analyst
 - **pfi-pr-code-review** / **pfi-spec-driven-code-review** — según PR vs spec-driven
@@ -174,6 +179,7 @@ Ver `reference.md`. Español. No commit/push sin pedido. Lambdas de trabajo acot
 
 - `agents/iatl.md`, `pfi-tl-peer-daniel.md`, `pfi-review-orchestrator.md`, `pfi-cr-analyst.md`, `pfi-patterns-advisor.md`, `pfi-code-reviewer.md` (alias)
 - `skills/pfi-tl-peer-daniel/` (par TL Daniel + knowledge-sources.seed.json)
+- `skills/pfi-daily-branch-tracker/` (registro ramas)
 - `skills/pfi-iatl-developer-profile/` (completo + `pattern-sources.json`)
 - `skills/pfi-iatl-knowledge-hub/`
 - `skills/code-review/`

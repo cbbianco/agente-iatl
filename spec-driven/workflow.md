@@ -20,6 +20,12 @@ El par TL puede:
 - **Exigir cambios** — simplificar antes de HITL
 - **Aprobar** — presentar al desarrollador
 
+Si @iatl y Daniel no llegan a consenso tras un ciclo de réplica → **protocolo deadlock** (idea C, una recomendación). Ver [docs/peer-gate-deadlock-protocol.md](../docs/peer-gate-deadlock-protocol.md).
+
+## Registro de ramas
+
+Al proponer HITL con rama concreta, @iatl registra en Mongo `working_branches` y actualiza [working-branches.md](../working-branches.md). Ver skill `pfi-daily-branch-tracker`.
+
 ## Después de HITL
 
 1. Spec en `docs/spec-driven/PFI-XXXX.md` (repo, si aplica)
@@ -38,12 +44,17 @@ docs/spec-driven/DECISIONES-CODE-REVIEW-PFI-XXXX.md
 
 Esta carpeta `pfi-agent-architecture/` documenta **cómo** trabajan los agentes, no reemplaza los specs por ticket.
 
-## Ejemplo ciclo
+## Ejemplo ciclo (PFI-1238 — actual)
 
 ```text
-PFI-1238 → @iatl propone fix response 201 POST /marcaje-manual
-        → @pfi-tl-peer-daniel: indaga PFI-1164, REST guidelines, veredicto APTO_CON_CAMBIOS
-        → @iatl ajusta alcance a 2 archivos
-        → César aprueba
-        → implementación → review → commit (si pide)
+PFI-1238 → negocio cierra: obligatorios JSON idProcesoNegocio, idTipoObjeto,
+           idTipoAforo, idAreaRiesgo + base datos prueba (INTERNAL y EXTERNAL)
+        → @iatl propone: DTO @IsNotEmpty + validación común pre-bifurcación;
+           retirar auto-resolución idProcesoNegocio
+        → @pfi-tl-peer-daniel: veredicto (diff mínimo, sin deuda canal)
+        → César aprueba HITL
+        → implementación en pfi-1238/feature/crear-marcaje-manual
+        → review → commit (si pide)
 ```
+
+Snapshot tickets: [context/active-tickets.md](../context/active-tickets.md).

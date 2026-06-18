@@ -11,7 +11,7 @@ Un sistema de agentes cooperativos para desarrollo spec-driven en PFI:
 1. **@iatl** — orquestador principal; única interfaz con el desarrollador (César).
 2. **@pfi-tl-peer-daniel** — par revisor con perfil TL Daniel; debate toda Propuesta **antes** del gate HITL.
 3. **@pfi-review-orchestrator** — pipeline post-código (CR analyst + Bugbot).
-4. **Hub Mongo local** — contexto, learnings, fuentes de conocimiento, debates par TL.
+4. **Hub Mongo local** — contexto, learnings, fuentes de conocimiento, debates par TL, **ramas en trabajo**.
 
 Objetivo: que @iatl **aprenda y mejore** con cada ciclo (Mongo + skills), con barra TL pragmática y estándar IATL hexagonal.
 
@@ -27,8 +27,10 @@ Objetivo: que @iatl **aprenda y mejore** con cada ciclo (Mongo + skills), con ba
 ## Pipeline resumido
 
 ```text
-Ticket → @iatl elabora Propuesta
+Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
+      → @iatl elabora Propuesta
       → @pfi-tl-peer-daniel (debate + knowledge_sources + web)
+      → [deadlock?] síntesis C → una recomendación HITL
       → @iatl ajusta → usuario aprueba (HITL)
       → implementación
       → @pfi-review-orchestrator → CR + Bugbot
@@ -96,3 +98,7 @@ Ver [mongo/knowledge-sources.md](mongo/knowledge-sources.md).
 - [skills/](skills/) — catálogo skills
 - [mongo/](mongo/) — esquema, colecciones, comandos
 - [spec-driven/](spec-driven/) — flujo spec-driven
+- [working-branches.md](working-branches.md) — espejo ramas Git activas
+- [context/active-tickets.md](context/active-tickets.md) — snapshot tickets en curso (PFI-1238, 1228, 1039)
+- [docs/daily-branch-tracker.md](docs/daily-branch-tracker.md) — protocolo registro ramas
+- [docs/peer-gate-deadlock-protocol.md](docs/peer-gate-deadlock-protocol.md) — desacuerdo @iatl ↔ Daniel

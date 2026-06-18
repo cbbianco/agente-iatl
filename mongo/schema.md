@@ -17,11 +17,13 @@ Scripts: `~/.cursor/iatl-knowledge/`
 | `sources_cache` | Cache fetch web patrones | @pfi-patterns-advisor |
 | **`knowledge_sources`** | **Índice URLs par TL** | seed + ingest |
 | **`peer_discussions`** | **Debates pre-HITL** | @pfi-tl-peer-daniel |
+| **`working_branches`** | **Ramas Git en trabajo** | @iatl (`pfi-daily-branch-tracker`) |
 
 ## Índices (init-indexes.js)
 
 - `knowledge_sources`: unique `sourceId`; `category + priority`; `enabled + category`; `tags`
 - `peer_discussions`: `ticket + createdAt`; `verdict`; `source`
+- `working_branches`: unique `branch`; `ticket + updatedAt`; `status + updatedAt`
 
 ## Instalación
 
@@ -39,6 +41,7 @@ node query.js --ticket PFI-XXXX
 node query.js --active-learnings
 node query.js --knowledge-sources [--category aws]
 node query.js --peer-discussions [--ticket PFI-XXXX]
+node query.js --working-branches [--ticket PFI-XXXX] [--status active]
 ```
 
 ## Ingesta
@@ -50,6 +53,9 @@ node ingest.js knowledge_source --id "..." --category rest-api --name "..." --ur
 
 node ingest.js peer_discussion --ticket PFI-XXXX --verdict APTO_PROPUESTA \
   --summary "..." --sources-used "aws-lambda-best-practices"
+
+node ingest.js working_branch --ticket PFI-XXXX --branch "pfi-XXXX/fix/slug" \
+  --base develop --role feature --status active --notes "contexto"
 ```
 
 Ver también [knowledge-sources.md](knowledge-sources.md).

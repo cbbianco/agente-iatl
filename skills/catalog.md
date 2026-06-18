@@ -8,6 +8,7 @@ Fuente operativa: `~/.cursor/skills/pfi-iatl-developer-profile/skills-catalog.md
 |-------|-----|
 | `pfi-iatl-developer-profile` | Perfil César — hexagonal, HITL |
 | `pfi-iatl-knowledge-hub` | Mongo hub |
+| **`pfi-daily-branch-tracker`** | **Registro diario ramas Git + espejo `working-branches.md`** |
 | **`pfi-tl-peer-daniel`** | **Par TL Daniel — debate pre-HITL** |
 | `pfi-pr-code-review` | Review PR |
 | `pfi-spec-driven-code-review` | Gate post spec-driven |
@@ -17,6 +18,15 @@ Fuente operativa: `~/.cursor/skills/pfi-iatl-developer-profile/skills-catalog.md
 | `legacy-migration` | Migración legacy |
 | `pfi-commit-message-format` | Commits |
 | `pfi-git-branch-format` | Ramas |
+
+## Skill daily branch tracker
+
+```text
+~/.cursor/skills/pfi-daily-branch-tracker/
+└── SKILL.md
+```
+
+Copia doc: [pfi-daily-branch-tracker.md](pfi-daily-branch-tracker.md)
 
 ## Skill par TL — archivos
 
