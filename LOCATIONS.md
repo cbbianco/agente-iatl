@@ -13,6 +13,8 @@
 | Profile stack | `~/.cursor/skills/pfi-iatl-developer-profile/` | — |
 | Specs ticket | `docs/spec-driven/` (repo pfi-backend-core) | `pfi-agent-architecture/spec-driven/workflow.md` |
 | Skill daily branches | `~/.cursor/skills/pfi-daily-branch-tracker/` | `pfi-agent-architecture/skills/pfi-daily-branch-tracker.md` |
+| **Skill ticket resolver** | `~/.cursor/skills/pfi-ticket-source-resolver/` | `pfi-agent-architecture/skills/pfi-ticket-source-resolver.md` |
+| Análisis Chroma | — | `pfi-agent-architecture/architecture/knowledge-layer-chroma.md` |
 | Espejo ramas | Mongo `working_branches` | `pfi-agent-architecture/working-branches.md` |
 | Snapshot tickets | — | `pfi-agent-architecture/context/active-tickets.md` |
 | Peer gate deadlock | `~/.cursor/skills/pfi-tl-peer-daniel/SKILL.md` § Desacuerdo | `pfi-agent-architecture/docs/peer-gate-deadlock-protocol.md` |

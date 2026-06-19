@@ -41,7 +41,22 @@ Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
 
 Ver [architecture/pipeline.md](architecture/pipeline.md).
 
-**Versión doc actual:** [0.3.0](CHANGELOG.md#030--2026-06-19) · commit `53569a1`
+**Versión doc actual:** [0.4.0](CHANGELOG.md#040--2026-06-19)
+
+## Resolución de tickets (MCP-first)
+
+Al recibir un **número de historia** sin URL, el agente usa skill **`pfi-ticket-source-resolver`**:
+
+1. Pregunta plataforma (Jira Pandora, ClickUp, etc.)
+2. Si hay MCP configurado → descarga el issue **sin esperar link**
+3. El link (`pandora.aduana.cl/jira/browse/PFI-XXXX`) sigue siendo válido
+
+Ver [skills/pfi-ticket-source-resolver.md](skills/pfi-ticket-source-resolver.md).
+
+## Capa de conocimiento (Mongo + Chroma)
+
+- **Mongo** — hub operativo (tickets, ramas, cierres HITL): [mongo/](mongo/)
+- **Chroma (análisis)** — capa semántica opcional, no reemplaza Mongo: [architecture/knowledge-layer-chroma.md](architecture/knowledge-layer-chroma.md)
 
 ## Instalación hub Mongo (una vez)
 
@@ -96,13 +111,14 @@ Ver [mongo/knowledge-sources.md](mongo/knowledge-sources.md).
 
 ## Índice
 
-- [CHANGELOG.md](CHANGELOG.md) — historial de versiones (v0.1.0 → v0.3.0)
+- [CHANGELOG.md](CHANGELOG.md) — historial de versiones (v0.1.0 → v0.4.0)
 - [architecture/](architecture/) — visión, pipeline, feedback loop
 - [agents/](agents/) — definiciones agente (copia)
 - [skills/](skills/) — catálogo skills
 - [mongo/](mongo/) — esquema, colecciones, comandos
 - [spec-driven/](spec-driven/) — flujo spec-driven
 - [working-branches.md](working-branches.md) — espejo ramas Git activas
-- [context/active-tickets.md](context/active-tickets.md) — snapshot tickets en curso (PFI-1238, 1228, 1039)
+- [context/active-tickets.md](context/active-tickets.md) — snapshot tickets (PFI-1215 activo; 1172/1238 cerrados)
 - [docs/daily-branch-tracker.md](docs/daily-branch-tracker.md) — protocolo registro ramas
 - [docs/peer-gate-deadlock-protocol.md](docs/peer-gate-deadlock-protocol.md) — desacuerdo @iatl ↔ Daniel
+- [architecture/knowledge-layer-chroma.md](architecture/knowledge-layer-chroma.md) — Mongo vs Chroma

@@ -14,6 +14,8 @@ Tres capas de inteligencia cooperativa + hub Mongo:
 | Gate pre-HITL | @pfi-tl-peer-daniel | Daniel TL — pragmático, diff mínimo |
 | Gate post-código | @pfi-review-orchestrator | CR Claude + Bugbot |
 | Memoria sprint | Hub Mongo + `close-ticket.js` | Cierres HITL con retención parametrizable |
+| Fuentes issue | `pfi-ticket-source-resolver` | MCP-first Jira/… por número de historia |
+| Recall semántico (piloto) | Chroma local (propuesto) | Similitud learnings/CR — ver knowledge-layer-chroma.md |
 
 ## Principios
 

@@ -9,29 +9,31 @@
 
 ## Ramas activas
 
-1. **PFI-1228** · `pfi-1228/fix/post-persona-paridad-legacy` · base `develop` · **active**
-   - Lambda: `lambda-casos` · POST personas domicilio + geo numérica
-   - Commit: `81733dd4` · fix backend completo; pendiente QA DEV
-   - Spec: `docs/spec-driven/PFI-1228.md` (local)
+1. **PFI-1215** · `pfi-1215/feature/generacion-documental-seguridad` · base `PFI-1149/migration/...` · **active**
+   - Lambda: `lambda-documento` · HU2 generación documental Seguridad
+   - Conflict develop: `conflict_resolutions/develop/pfi-1215/feature/generacion-documental-seguridad`
+   - Conflict qa: `conflict_resolutions/qa/pfi-1215/feature/generacion-documental-seguridad`
+   - Nota: rebase sobre develop recomendado (migración draft ya en develop)
 
-2. **PFI-1039** · `pfi-1039/fix/traza-denuncia-decare-fecha-chile` · base `develop` · **active**
-   - Lambda: denuncias · `fechaAuditoriaIsoChile`
-   - Eventos/SAS ya mergeado en rama aparte
+2. **PFI-1228** · `pfi-1228/fix/post-persona-paridad-legacy` · base `develop` · **active**
+   - Lambda: `lambda-casos` · POST personas domicilio + geo numérica
+   - Commit: `81733dd4` · pendiente QA DEV
+
+3. **PFI-1039** · `pfi-1039/fix/traza-denuncia-decare-fecha-chile` · base `develop` · **active**
+   - `fechaAuditoriaIsoChile` en traza DECARE
 
 ---
 
 ## Ramas mergeadas / cerradas HITL (recientes)
 
-3. **PFI-1238** · `pfi-1238/feature/crear-marcaje-manual` · **merged (cierre HITL 2026-06-19)**
-   - Lambda: `lambda-marcaje-manual` · `POST /marcaje-manual`
-   - Commits: feature `eaee6a8c` · conflict develop `d766eb85` · conflict qa `f24996ef`
-   - Hub: `ticket_closures` · learnings hasta 2026-07-03
+4. **PFI-1172** · `pfi-1172/feature/registro-hermes-validar-documento` · **merged (cierre 2026-06-19)**
+   - `GET /documento/validar/{idDocumento}` · Hermes + RolesGuard api-key
+   - Commits: feature `af72e845` · conflict develop `2c187842` · conflict qa `c3793382`
 
-4. **PFI-1152** · `pfi-1152/fix/secuencial-pg-oficio-fiscalia` · mergeado PR #250
+5. **PFI-1238** · `pfi-1238/feature/crear-marcaje-manual` · **merged (cierre 2026-06-19)**
+   - `POST /marcaje-manual` · commits feature `eaee6a8c`
 
-5. **PFI-1163** · `pfi-1163/feature/mgiracion-servicio-casos-personas` · mergeado PR #135
-
-6. **PFI-1039** · `pfi-1039/fix/fecha-auditoria-chile-dynamo` · eventos/SAS — mergeado PRs #219–#228
+6. **PFI-1152** · secuencial PG oficio fiscalía · PR #250 mergeado
 
 ---
 
@@ -45,9 +47,8 @@
 
 ```bash
 node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
-node ~/.cursor/iatl-knowledge/query.js --ticket-closure --ticket PFI-1238
-node ~/.cursor/iatl-knowledge/close-ticket.js --ticket PFI-XXXX --payload-file /tmp/closure.json
+node ~/.cursor/iatl-knowledge/query.js --ticket-closure --ticket PFI-1172
 node ~/.cursor/iatl-knowledge/ingest.js working_branch \
-  --ticket PFI-XXXX --branch "..." --base develop --role fix --status active \
+  --ticket PFI-XXXX --branch "..." --base develop --role feature --status active \
   --notes "contexto una línea"
 ```

@@ -15,7 +15,11 @@ Eres **@iatl**, orquestador del desarrollador backend PFI (Arkho). Operas en **m
 
 1. Lee **`~/.cursor/skills/pfi-iatl-developer-profile/profile-stack.md`** en orden.
 2. Lee skill **`pfi-iatl-knowledge-hub/SKILL.md`**.
-3. Si hay ticket activo:
+3. **Ticket por número o URL** — skill **`pfi-ticket-source-resolver`**:
+   - Si solo hay número (`PFI-1215`, *"la 1172"*) → **preguntar plataforma** (Jira, ClickUp, etc.).
+   - Si hay **MCP** para esa plataforma → **bajar issue directo** (no esperar link).
+   - Si el usuario pega **URL** → extraer clave y fetch igual que antes (compatibilidad).
+4. Si hay ticket activo:
 
 ```bash
 node ~/.cursor/iatl-knowledge/query.js --ticket PFI-XXXX
@@ -23,9 +27,9 @@ node ~/.cursor/iatl-knowledge/query.js --active-learnings
 node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
 ```
 
-4. Skill **`pfi-daily-branch-tracker`** — registrar rama al proponer HITL o cambiar de ticket.
+5. Skill **`pfi-daily-branch-tracker`** — registrar rama al proponer HITL o cambiar de ticket.
 
-5. Registrar sesión si es trabajo nuevo con ticket:
+6. Registrar sesión si es trabajo nuevo con ticket:
 
 ```bash
 node ~/.cursor/iatl-knowledge/ingest.js session \

@@ -8,6 +8,7 @@ Fuente operativa: `~/.cursor/skills/pfi-iatl-developer-profile/skills-catalog.md
 |-------|-----|
 | `pfi-iatl-developer-profile` | Perfil César — hexagonal, HITL |
 | `pfi-iatl-knowledge-hub` | Mongo hub |
+| **`pfi-ticket-source-resolver`** | **Número de historia → pregunta plataforma → MCP-first (sin esperar link)** |
 | **`pfi-daily-branch-tracker`** | **Registro diario ramas Git + espejo `working-branches.md`** |
 | **`pfi-tl-peer-daniel`** | **Par TL Daniel — debate pre-HITL** |
 | `pfi-pr-code-review` | Review PR |
@@ -27,7 +28,8 @@ Fuente operativa: `~/.cursor/skills/pfi-iatl-developer-profile/skills-catalog.md
 ```
 
 Copia doc: [pfi-daily-branch-tracker.md](pfi-daily-branch-tracker.md)  
-Copia doc hub: [pfi-iatl-knowledge-hub.md](pfi-iatl-knowledge-hub.md) — incluye § Cierre HITL autónomo
+Copia doc hub: [pfi-iatl-knowledge-hub.md](pfi-iatl-knowledge-hub.md) — incluye § Cierre HITL autónomo  
+Copia doc tickets: [pfi-ticket-source-resolver.md](pfi-ticket-source-resolver.md) — MCP-first por número de historia
 
 ## Skill par TL — archivos
 

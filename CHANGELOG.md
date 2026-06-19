@@ -5,6 +5,36 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.4.0] — 2026-06-19
+
+**Tema:** resolución MCP-first de tickets + análisis capa Chroma + cierre PFI-1172 / apertura PFI-1215
+
+### Añadido
+
+- **Skill `pfi-ticket-source-resolver`** (`~/.cursor/skills/`) — al pasar número de historia:
+  - Pregunta plataforma (Jira, ClickUp, Confluence, otro)
+  - Si hay MCP → fetch directo **sin esperar link**
+  - URL/link sigue funcionando como fallback
+- `skills/pfi-ticket-source-resolver.md` — copia doc en repo
+- `architecture/knowledge-layer-chroma.md` — análisis Mongo vs Chroma (capa 2 semántica, piloto propuesto)
+
+### Cambiado
+
+- `agents/iatl.md` — arranque: paso ticket-source-resolver antes de Mongo
+- `skills/catalog.md` — nuevo skill + referencia MCP `user-jira-pandora-pfi`
+- `context/active-tickets.md` — PFI-1215 activo; PFI-1172 cerrado; PFI-1238 cerrado
+- `working-branches.md` — PFI-1215/1172 ramas actualizadas
+- `README.md` — índice Chroma + ticket resolver
+
+### Operación validada (sesión 2026-06-19)
+
+| Ticket | Resultado |
+|--------|-----------|
+| PFI-1172 | Cerrado HITL · 3 ramas pusheadas · `af72e845` cómo probar validar documento |
+| PFI-1215 | Sesión abierta · ramas desde PFI-1149 + conflict develop/qa · análisis spec-driven HU2 Seguridad |
+
+---
+
 ## [0.3.0] — 2026-06-19
 
 **Commit:** `53569a1` — *mejoras de cierre y debate de sesiones*  
