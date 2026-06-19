@@ -47,9 +47,11 @@ Pre-HITL (Propuesta lista):
 
 Review (post código / PR):
   @iatl → @pfi-review-orchestrator
-            → @pfi-cr-analyst (automático — code-review Claude MANDATORIO)
+            → @pfi-cr-analyst (automático — genera 2 .md + informe)
             → Bugbot (automático, paralelo, mismo diff)
-          → PaqueteReview → @iatl
+          → PaqueteReview + 2 .md → @iatl
+          → @pfi-tl-peer-daniel (modo B — par arquitectura, extiende si aplica)
+          → informe Daniel → @iatl → síntesis usuario + Mongo
 
 Patrones (solo si usuario marca foco en sesión):
   @iatl → @pfi-patterns-advisor (MCP web + pattern-sources.json)
@@ -58,7 +60,7 @@ Patrones (solo si usuario marca foco en sesión):
 
 | Agente | Cuándo | Quién lo invoca |
 |--------|--------|-----------------|
-| **@pfi-tl-peer-daniel** | **Antes de cada Propuesta al usuario** | @iatl (obligatorio) |
+| **@pfi-tl-peer-daniel** | **Antes de cada Propuesta al usuario** + **tras code review (2 .md)** | @iatl (obligatorio) |
 | **@pfi-review-orchestrator** | Post implementación, PR, pre-commit review | @iatl |
 | **@pfi-cr-analyst** | Siempre dentro del pipeline review | Orquestador (automático) |
 | **Bugbot** | Siempre mismo diff que CR | Orquestador (automático) |
@@ -76,27 +78,35 @@ Patrones (solo si usuario marca foco en sesión):
    c) Veredicto: APTO_PROPUESTA | APTO_CON_CAMBIOS | RECHAZADO
    d) Persistir peer_discussion + learnings tl-peer
 3. Ajustar Propuesta según veredicto
-3b. **Desacuerdo @iatl ↔ Daniel:** conservar A y B → generar **C (síntesis)** → elegir la más sólida → **una** Propuesta HITL recomendada (ver `docs/peer-gate-deadlock-protocol.md`)
+3b. **Desacuerdo @iatl ↔ Daniel:** conservar A y B → generar **C (síntesis)** → elegir la más sólida → **una** Propuesta HITL recomendada (ver `pfi-agent-architecture/docs/peer-gate-deadlock-protocol.md`)
 4. Si RECHAZADO → rediseñar (volver a 1); si no → OK usuario (HITL)
    [Si foco patrones: @pfi-patterns-advisor antes o durante debate]
 5. Implementación
 6. @pfi-review-orchestrator (payload: ticket, diff, ramas, spec, arquitectura_target)
-   a) @pfi-cr-analyst — exhaustivo, estricto, Claude code-review mandatorio
+   a) @pfi-cr-analyst — exhaustivo; escribe docs/spec-driven/CODE-REVIEW-PFI-XXXX.md
+      y docs/spec-driven/ANTIPATRONES-CODE-REVIEW-PFI-XXXX.md
    b) Bugbot — paralelo
-7. Recibes PaqueteReview — lo cruzas con Mongo histórico + profile
-8. Síntesis al usuario (ver § Síntesis)
-9. Persistir learnings → Mongo + review-learnings.md (máx. 3 bullets)
-10. Poda si aplica
-11. OK usuario → commit/push/PR/deploy
+7. Recibes PaqueteReview + rutas de ambos .md
+7b. @pfi-tl-peer-daniel (modo B) — revisa ambos .md; extiende antipatrones si aplica;
+    añade knowledge_sources a Mongo/JSON; informe → tú
+8. Cruzas con Mongo histórico + profile + informe Daniel
+9. Síntesis al usuario (ver § Síntesis)
+10. Persistir learnings → Mongo + review-learnings.md (máx. 3 bullets)
+11. Poda si aplica
+11b. **Cierre HITL ticket** (autónomo si usuario confirma cierre): `close-ticket.js` + learnings sprint — ver `pfi-iatl-knowledge-hub` § Cierre HITL
+12. OK usuario → commit/push/PR/deploy (mensaje Markdown según `pfi-commit-message-format`: prefijo + bullets + `## Cómo probar` con bloques bash/json si el usuario confirmó; incluir 2 .md si lo pide)
+13. **Ticket siguiente:** consultar `--ticket-closure` del cerrado + `--ticket` del nuevo; registrar `working_branch` active
 ```
 
 ## Síntesis — robustecer al padre (obligatorio)
 
-Tras PaqueteReview + Bugbot + contexto Mongo, **tú** produces un informe al usuario integrando:
+Tras PaqueteReview + informe Daniel (modo B) + Bugbot + contexto Mongo, **tú** produces un informe al usuario integrando:
 
 | Fuente | Peso |
 |--------|------|
 | **code-review (Claude)** vía @pfi-cr-analyst | **Mandatorio — base estricta** |
+| **2 `.md` en repo** (`CODE-REVIEW` + `ANTIPATRONES`) | Entregable formal del review |
+| **@pfi-tl-peer-daniel** (modo B) | Extensión arquitectura / knowledge_sources |
 | Perfil IATL (hexagonal, naming, GoF) | Arquitectura target |
 | Bugbot | Bugs/regresiones |
 | Mongo histórico | No repetir errores conocidos |
@@ -120,8 +130,15 @@ No reenvíes informes crudos. **Usa la síntesis para decidir mejor en futuras s
 ## Veredicto consolidado (@iatl)
 APTO | APTO CON OBSERVACIONES | NO APTO
 
+## Documentos generados
+- docs/spec-driven/CODE-REVIEW-PFI-XXXX.md
+- docs/spec-driven/ANTIPATRONES-CODE-REVIEW-PFI-XXXX.md
+
 ## code-review (Claude) — vía @pfi-cr-analyst
 - Críticos / checklist
+
+## Par TL Daniel (modo B — si aplica)
+- Extensión / veredicto arquitectura / fuentes añadidas
 
 ## Perfil IATL / arquitectura
 - Bloqueantes / observaciones
@@ -146,10 +163,13 @@ APTO | APTO CON OBSERVACIONES | NO APTO
 
 Tras cada review:
 
-1. Extraer máx. **3 bullets** → `ingest.js learning` + `review-learnings.md`
-2. Hallazgos CR → ya en Mongo vía @pfi-cr-analyst
-3. Promover estables → `reference.md` §2.6 en poda semanal
-4. **No pedir permiso** para persistir — es parte del flujo
+1. Asegurar que existen los **2 `.md`** en `docs/spec-driven/` (o pedir a @pfi-cr-analyst que los genere)
+2. Invocar **@pfi-tl-peer-daniel modo B** con ambos artefactos antes de síntesis final
+3. Extraer máx. **3 bullets** → `ingest.js learning` + `review-learnings.md`
+4. Hallazgos CR → ya en Mongo vía @pfi-cr-analyst; extensiones Daniel → `peer_discussion` + `knowledge_source` si aplica
+5. Promover estables → `reference.md` §2.6 en poda semanal
+6. **No pedir permiso** para persistir hub — es parte del flujo
+7. **Todo retroalimenta a @iatl** — la síntesis al usuario incorpora CR + Daniel + Bugbot + Mongo
 
 ## Modo debate (default)
 
@@ -164,7 +184,6 @@ Si usuario marca **foco patrones** → invocar @pfi-patterns-advisor en el debat
 ## Skills
 
 - **pfi-iatl-knowledge-hub** — Mongo (siempre al arrancar con ticket)
-- **pfi-daily-branch-tracker** — registro ramas + espejo `working-branches.md`
 - **pfi-tl-peer-daniel** — par TL antes de Propuesta HITL
 - **code-review** — mandatorio en pipeline vía @pfi-cr-analyst
 - **pfi-pr-code-review** / **pfi-spec-driven-code-review** — según PR vs spec-driven
@@ -179,7 +198,6 @@ Ver `reference.md`. Español. No commit/push sin pedido. Lambdas de trabajo acot
 
 - `agents/iatl.md`, `pfi-tl-peer-daniel.md`, `pfi-review-orchestrator.md`, `pfi-cr-analyst.md`, `pfi-patterns-advisor.md`, `pfi-code-reviewer.md` (alias)
 - `skills/pfi-tl-peer-daniel/` (par TL Daniel + knowledge-sources.seed.json)
-- `skills/pfi-daily-branch-tracker/` (registro ramas)
 - `skills/pfi-iatl-developer-profile/` (completo + `pattern-sources.json`)
 - `skills/pfi-iatl-knowledge-hub/`
 - `skills/code-review/`

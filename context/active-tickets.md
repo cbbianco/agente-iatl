@@ -1,58 +1,46 @@
 # Tickets activos — snapshot para agentes
 
-> Espejo de contexto operativo. Specs completos en `pfi-backend-core/docs/spec-driven/`.
+> Espejo de contexto operativo. Specs completos en `pfi-backend-core/docs/spec-driven/` (local, gitignored).
 
-**Última sync:** 2026-06-17
+**Última sync:** 2026-06-19
 
 ---
 
-## PFI-1238 — Marcaje manual campos obligatorios
+## PFI-1238 — Marcaje manual campos obligatorios — **CERRADO HITL**
 
 | Campo | Valor |
 |-------|-------|
 | Lambda | `lambda-marcaje-manual` |
 | Endpoint | `POST /marcaje-manual` |
-| Rama | `pfi-1238/feature/crear-marcaje-manual` (base `develop`) |
-| Estado | Análisis cerrado — **pendiente implementar** |
+| Estado | **Implementación cerrada** — merge pendiente fuera de alcance agente |
+| Hub | `ticket_closures` · sprint `2026-S12` · expira 2026-07-03 |
 
-### Decisión negocio (cerrada)
+### Commits finales
 
-Registro de marca **completo y válido** = **8 campos obligatorios en JSON** (INTERNAL y EXTERNAL):
+| Rama | Commit |
+|------|--------|
+| `pfi-1238/feature/crear-marcaje-manual` | `eaee6a8c` |
+| `conflict_resolutions/develop/...` | `d766eb85` |
+| `conflict_resolutions/qa/...` | `f24996ef` |
 
-**Catálogo / negocio (4):**
+### Learnings conservados (cierre)
 
-| Campo negocio | JSON |
-|---------------|------|
-| Proceso negocio | `idProcesoNegocio` |
-| Tipo objeto | `idTipoObjeto` |
-| Tipo aforo | `idTipoAforo` |
-| Área riesgo | `idAreaRiesgo` |
-
-**Base datos prueba (4):** `idObjetoSeleccionado`, `idAduana`, `identificacionObjeto`, `procedimiento`
-
-**EXTERNAL** suma reglas canal: `idSistemaOrigen`, `idTipoFiltro`, `rutUsuarioMarcaManual`.
-
-### Gap código actual
-
-- DTO: los 4 catálogos siguen `@IsOptional`
-- INTERNAL: auto-resuelve `idProcesoNegocio` si falta — **retirar**
-- EXTERNAL: no exige catálogos → INSERT con null
-
-### Fix acordado
-
-1. `@IsNotEmpty` en los 4 catálogos en DTO
-2. Validación común **antes** de bifurcar INTERNAL/EXTERNAL
-3. Eliminar auto-resolución `idProcesoNegocio` en domain service
+1. Registro válido = 8 campos base + uid; EXTERNAL suma `idSistemaOrigen`, `idTipoFiltro`, `rutUsuarioMarcaManual`.
+2. Orden guards: `MarcajeGuardarContextoGuard` **debajo** de `@RequireSessionWithProfile`.
+3. Commits Markdown con `## Cómo probar`; prohibido subir `docs/` al repo.
 
 ---
 
-## PFI-1228 — POST personas domicilio
+## PFI-1228 — POST personas domicilio — **ACTIVO**
 
 | Campo | Valor |
 |-------|-------|
 | Lambda | `lambda-casos` |
-| Rama | `pfi-1228/fix/post-persona-paridad-legacy` (base tip PFI-1163 `2f949755`) |
+| Endpoint | `POST/PUT/GET /casos/{numeroCaso}/personas` |
+| Rama | `pfi-1228/fix/post-persona-paridad-legacy` |
+| Commit | `81733dd4` — domicilio + geo numérica en POST |
 | Causa | Deuda PFI-1163: POST `@IsString()` vs legacy `number`; INSERT sin domicilio |
+| Pendiente | QA DEV + ramas conflict develop/qa |
 
 ---
 
@@ -71,6 +59,8 @@ Registro de marca **completo y válido** = **8 campos obligatorios en JSON** (IN
 @iatl y subagentes: consultar al arrancar sesión **además** de:
 
 ```bash
+node ~/.cursor/iatl-knowledge/query.js --project-config
 node ~/.cursor/iatl-knowledge/query.js --ticket PFI-XXXX
+node ~/.cursor/iatl-knowledge/query.js --ticket-closure --ticket PFI-XXXX
 node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
 ```

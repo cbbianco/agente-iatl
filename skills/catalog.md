@@ -26,7 +26,8 @@ Fuente operativa: `~/.cursor/skills/pfi-iatl-developer-profile/skills-catalog.md
 └── SKILL.md
 ```
 
-Copia doc: [pfi-daily-branch-tracker.md](pfi-daily-branch-tracker.md)
+Copia doc: [pfi-daily-branch-tracker.md](pfi-daily-branch-tracker.md)  
+Copia doc hub: [pfi-iatl-knowledge-hub.md](pfi-iatl-knowledge-hub.md) — incluye § Cierre HITL autónomo
 
 ## Skill par TL — archivos
 

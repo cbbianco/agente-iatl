@@ -25,6 +25,7 @@ Poda semanal → reference.md §2.6 (reglas estables)
 | `learnings` category `tl-peer` | Bullets accionables |
 | `knowledge_sources` | URLs consultadas en debates previos |
 | `review_findings` | Errores post-implementación |
+| `ticket_closures` | Acuerdos HITL por sprint (retención parametrizable) |
 
 ## Límites de ingest
 
@@ -47,6 +48,9 @@ review-learnings.md (vista humana)
 ```bash
 # Historial debate ticket
 node ~/.cursor/iatl-knowledge/query.js --peer-discussions --ticket PFI-1238
+
+# Cierre HITL ticket
+node ~/.cursor/iatl-knowledge/query.js --ticket-closure --ticket PFI-1238
 
 # Learnings activos tl-peer
 node ~/.cursor/iatl-knowledge/query.js --active-learnings

@@ -11,6 +11,7 @@
 │ @iatl: arranque                      │
 │  - profile-stack                      │
 │  - query.js --ticket                  │
+│  - query.js --ticket-closure          │
 │  - query.js --working-branches        │
 │  - query.js --peer-discussions        │
 │  - context/active-tickets.md          │
@@ -59,6 +60,16 @@
 └──────┬───────────────────────────────┘
        ▼
    commit/push (solo si usuario pide)
+       ▼
+┌──────────────────────────────────────┐
+│ Cierre HITL ticket (autónomo)        │
+│  - config.json (project/sprint/14d) │
+│  - close-ticket.js + learnings       │
+│  - working_branches → merged         │
+│  - query --ticket-closure            │
+└──────┬───────────────────────────────┘
+       ▼
+   Ticket siguiente → ingest session + working_branch active
 ```
 
 ## 2. Foco patrones (opcional)

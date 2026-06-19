@@ -47,10 +47,28 @@ Antes de cualquier juicio propio, lee y aplica **completamente**:
 
 Si `foco_patrones: true` en payload → solicitar al orquestador evaluación de @pfi-patterns-advisor antes de cerrar sección GoF.
 
+## Entregables obligatorios en repo (2 `.md`)
+
+Antes de cerrar el informe interno, **escribir siempre** en `docs/spec-driven/`:
+
+| Archivo | Contenido |
+|---------|-----------|
+| `CODE-REVIEW-PFI-XXXX.md` | Informe por responsabilidad; severidad crítico→alto→medio→bajo; veredicto; checklist |
+| `ANTIPATRONES-CODE-REVIEW-PFI-XXXX.md` | Antipatrones nombrados (AP-01…), malas prácticas, contraste con lambdas hermanas, plan remediación |
+
+- Enlazar ambos documentos entre sí.
+- Seguir estructura de skills `pfi-pr-code-review` y `pfi-spec-driven-code-review`.
+- Incluir rutas absolutas/relativas en el informe interno (sección **Artefactos generados**).
+- **No** commitear salvo que @iatl lo pida; sí **persistir archivos** en working tree.
+
 ## Formato de informe (para @pfi-review-orchestrator)
 
 ```markdown
 # Análisis CR — PFI-XXXX
+
+## Artefactos generados
+- docs/spec-driven/CODE-REVIEW-PFI-XXXX.md
+- docs/spec-driven/ANTIPATRONES-CODE-REVIEW-PFI-XXXX.md
 
 ## Veredicto preliminar
 APTO | APTO CON OBSERVACIONES | NO APTO

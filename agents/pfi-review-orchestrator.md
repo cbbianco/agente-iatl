@@ -46,10 +46,13 @@ Si falta ticket o diff, **detente** y solicita a @iatl.
 ```text
 1. Validar alcance — no mezclar tickets
 2. Task @pfi-cr-analyst (readonly) — mismo payload
+   → genera 2 .md en docs/spec-driven/ (CODE-REVIEW + ANTIPATRONES)
 3. Task review-bugbot (readonly) — mismo diff, en paralelo si es posible
 4. Esperar ambos informes
-5. Consolidar PaqueteReview → @iatl
-6. Persistir en Mongo: review_meta + session_id
+5. Consolidar PaqueteReview → @iatl (incluir rutas de ambos .md)
+6. @iatl entrega PaqueteReview + 2 .md → @pfi-tl-peer-daniel (gate arquitectura)
+7. Daniel: extiende / knowledge_sources / Mongo → informe → @iatl
+8. Persistir en Mongo: review_meta + session_id
 ```
 
 ## Formato PaqueteReview (para @iatl)
@@ -62,8 +65,16 @@ Si falta ticket o diff, **detente** y solicita a @iatl.
 - diff_alcance: ...
 - ramas: ...
 
+## Artefactos generados (obligatorio)
+- docs/spec-driven/CODE-REVIEW-PFI-XXXX.md
+- docs/spec-driven/ANTIPATRONES-CODE-REVIEW-PFI-XXXX.md
+
 ## @pfi-cr-analyst
 [Informe completo del analista — incluye veredicto preliminar]
+
+## Gate @pfi-tl-peer-daniel (pendiente / completado)
+- Entrada: ambos .md + este paquete
+- Salida: informe Daniel → @iatl (extensión, knowledge_sources, veredicto arquitectura)
 
 ## Bugbot
 [Hallazgos crudos]

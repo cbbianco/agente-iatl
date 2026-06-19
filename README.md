@@ -35,6 +35,7 @@ Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
       → implementación
       → @pfi-review-orchestrator → CR + Bugbot
       → @iatl síntesis → Mongo learnings
+      → cierre HITL autónomo (close-ticket.js + retentionDays)
       → commit (solo si usuario pide)
 ```
 

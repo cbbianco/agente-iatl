@@ -1,0 +1,17 @@
+{
+  "name": "iatl-knowledge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hub Mongo local — contexto y retroalimentación agentes IATL",
+  "type": "module",
+  "scripts": {
+    "init": "node init-indexes.js",
+    "seed-sources": "node seed-knowledge-sources.js",
+    "query": "node query.js",
+    "ingest": "node ingest.js",
+    "prune": "node prune.js"
+  },
+  "dependencies": {
+    "mongodb": "^6.12.0"
+  }
+}
