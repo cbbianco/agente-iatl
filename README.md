@@ -41,6 +41,8 @@ Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
 
 Ver [architecture/pipeline.md](architecture/pipeline.md).
 
+**Versión doc actual:** [0.3.0](CHANGELOG.md#030--2026-06-19) · commit `53569a1`
+
 ## Instalación hub Mongo (una vez)
 
 ```bash
@@ -94,6 +96,7 @@ Ver [mongo/knowledge-sources.md](mongo/knowledge-sources.md).
 
 ## Índice
 
+- [CHANGELOG.md](CHANGELOG.md) — historial de versiones (v0.1.0 → v0.3.0)
 - [architecture/](architecture/) — visión, pipeline, feedback loop
 - [agents/](agents/) — definiciones agente (copia)
 - [skills/](skills/) — catálogo skills
