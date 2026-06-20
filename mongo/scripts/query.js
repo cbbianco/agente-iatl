@@ -36,6 +36,38 @@ async function main() {
   const db = await getDb();
   const limit = Number(args.limit ?? 20);
 
+  if (args["semantic-search"]) {
+    const { semanticSearch, chromaHealth } = await import("./lib/chroma.js");
+    const health = await chromaHealth();
+    if (!health.ok) {
+      console.log(JSON.stringify({ error: health.error, semantic_results: [] }, null, 2));
+      await closeDb();
+      return;
+    }
+    const rows = await semanticSearch(args["semantic-search"], {
+      limit: Number(args.limit ?? 8),
+      where: args.category ? { category: args.category } : undefined,
+    });
+    console.log(JSON.stringify({ query: args["semantic-search"], semantic_results: rows }, null, 2));
+    await closeDb();
+    return;
+  }
+
+  if (args["chroma-health"]) {
+    const { chromaHealth } = await import("./lib/chroma.js");
+    console.log(JSON.stringify({ chroma: await chromaHealth() }, null, 2));
+    await closeDb();
+    return;
+  }
+
+  if (args["ide-detect"]) {
+    const { detectIde, ideLabel } = await import("./lib/ide-detect.js");
+    const ide = detectIde();
+    console.log(JSON.stringify({ ide, label: ideLabel(ide) }, null, 2));
+    await closeDb();
+    return;
+  }
+
   if (args["active-learnings"]) {
     const rows = await db
       .collection("learnings")
@@ -170,7 +202,7 @@ async function main() {
   }
 
   console.error(
-    "Uso: query.js --ticket PFI-XXXX | --active-learnings | --tag patterns | --session <id> | --knowledge-sources [--category X] | --peer-discussions [--ticket PFI-XXXX] | --working-branches [--ticket PFI-XXXX] [--status active] | --ticket-closure --ticket PFI-XXXX | --project-config",
+    "Uso: query.js --ticket PFI-XXXX | --active-learnings | --tag patterns | --session <id> | --knowledge-sources [--category X] | --peer-discussions [--ticket PFI-XXXX] | --working-branches [--ticket PFI-XXXX] [--status active] | --ticket-closure --ticket PFI-XXXX | --project-config | --semantic-search \"texto\" [--category X] | --chroma-health | --ide-detect",
   );
   process.exit(1);
 }

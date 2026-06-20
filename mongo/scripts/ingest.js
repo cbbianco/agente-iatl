@@ -44,7 +44,7 @@ async function main() {
   const type = args._[0];
   if (!type) {
     console.error(
-      "Tipo requerido: learning | review_finding | pattern_eval | review_meta | session | knowledge_source | peer_discussion | working_branch",
+      "Tipo requerido: learning | review_finding | pattern_eval | review_meta | session | knowledge_source | peer_discussion | working_branch | chroma_doc",
     );
     process.exit(1);
   }
@@ -176,6 +176,31 @@ async function main() {
         },
         { upsert: true },
       );
+      break;
+    }
+
+    case "chroma_doc": {
+      const text = args.text ?? "";
+      if (!text) {
+        console.error("--text requerido para chroma_doc");
+        process.exit(1);
+      }
+      const { upsertDocument } = await import("./lib/chroma.js");
+      const chromaId =
+        args.id ??
+        `${args["doc-type"] ?? "note"}:${ticket}:${randomUUID().slice(0, 8)}`;
+      await upsertDocument({
+        id: chromaId,
+        text,
+        metadata: {
+          docType: args["doc-type"] ?? "note",
+          ticket,
+          category: args.category ?? "general",
+          sourceId: args["source-id"] ?? "",
+          agent: args.agent ?? "iatl",
+          source: args.source ?? args.agent ?? "iatl",
+        },
+      });
       break;
     }
 

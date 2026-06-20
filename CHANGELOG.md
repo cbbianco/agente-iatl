@@ -5,6 +5,43 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.5.0] — 2026-06-19
+
+**Tema:** Hub IATL v2.0 — Mongo operativo + ChromaDB semántico + PFI-1120 pausada
+
+### Añadido
+
+- **ChromaDB v2.0** — capa semántica implementada en `~/.cursor/iatl-knowledge/`
+  - `lib/chroma.js`, `lib/ide-detect.js`
+  - `setup-agent.js` — detecta IDE (Cursor/Antigravity) + config interactiva
+  - `migrate-to-chroma.js` — migración Mongo → Chroma
+  - `query.js --semantic-search`, `--chroma-health`, `--ide-detect`
+  - `ingest.js chroma_doc` — ingesta autónoma Daniel
+- `chroma/README.md` — guía operativa Chroma local
+- `mongo/hub-readme.md` — espejo README del hub operativo
+- `mongo/package.json` v2.0.0 — deps `chromadb`, `@chroma-core/default-embed`
+- `.gitignore` — excluye `chroma_local/venv/`
+
+### Cambiado
+
+- `architecture/knowledge-layer-chroma.md` — de análisis propuesto → **implementado v2.0**
+- `architecture/overview.md` — Chroma de piloto a implementado
+- `mongo/config.example.json` — campos `ide`, `projectContext`, `architectureTarget`, `chroma`
+- `mongo/README.md` — instalación setup-agent + Chroma
+- `skills/pfi-iatl-knowledge-hub.md` — skill v2 Mongo + Chroma
+- `LOCATIONS.md` — rutas Chroma y setup-agent
+- `README.md` — instalación v2.0, índice Chroma
+- `working-branches.md` — **PFI-1120** (oficio fiscalía, pausada lunes)
+
+### Operación validada (sesión 2026-06-19)
+
+| Item | Resultado |
+|------|-----------|
+| Migración Chroma | 54 docs en `iatl_semantic_knowledge` |
+| PFI-1120 | Ramas feature + update + conflicts develop/qa pusheadas; sesión pausada |
+
+---
+
 ## [0.4.0] — 2026-06-19
 
 **Tema:** resolución MCP-first de tickets + análisis capa Chroma + cierre PFI-1172 / apertura PFI-1215

@@ -1,6 +1,16 @@
 {
+  "ide": "cursor",
   "project": "pfi-backend-core",
+  "projectContext": "Backend PFI lambdas NestJS hexagonales",
   "sprintLabel": "2026-S12",
+  "architectureTarget": "hexagonal-lambda-nestjs",
   "retentionDays": 14,
-  "updatedAt": "2026-06-19T00:00:00.000Z"
+  "legacyMonolithPath": "/home/csar/Documentos/Proyectos/Arkho/PFI/Node/pfi-backend-application",
+  "legacyApiBaseDev": "https://yfx8p6e4h0.execute-api.us-east-1.amazonaws.com/dev",
+  "chroma": {
+    "host": "127.0.0.1",
+    "port": 8010,
+    "collection": "iatl_semantic_knowledge"
+  },
+  "updatedAt": "2026-06-19T20:00:00.000Z"
 }

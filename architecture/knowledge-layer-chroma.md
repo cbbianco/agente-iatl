@@ -1,114 +1,98 @@
-# Capa de conocimiento — Mongo vs Chroma
+# Capa de conocimiento — Mongo + Chroma (implementado v2.0)
 
-**Fecha:** 2026-06-19 · **Estado:** análisis arquitectónico (sin implementar)
+## Estado
 
-## Contexto actual (IATL)
+**Implementado** en `~/.cursor/iatl-knowledge/` (v2.0.0). Espejo de scripts en `mongo/scripts/` de este repo.
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│  @iatl / agentes hijos                                   │
-└───────────────────────────┬─────────────────────────────┘
-                            │
-        ┌───────────────────┼───────────────────┐
-        ▼                   ▼                   ▼
-  Mongo iatl_knowledge   reference.md      Skills ~/.cursor/
-  (consultas exactas)    (reglas estables)  (contratos)
-        │
-        ├── sessions, working_branches
-        ├── ticket_closures, learnings
-        ├── peer_discussions, review_findings
-        └── knowledge_sources (URLs indexadas)
+## División de responsabilidades
+
+| Almacén | Contenido | Operaciones |
+|---------|-----------|-------------|
+| **MongoDB** (`iatl_knowledge`) | sessions, working_branches, ticket_closures, learnings (meta), review_findings (meta), peer_discussions (meta), knowledge_sources (índice), pattern_evals | CRUD operativo, filtros por sprint/ticket, retención |
+| **ChromaDB** (`iatl_semantic_knowledge`) | Texto enriquecido de learnings, review_findings, peer_discussions rationale, knowledge_sources, `chroma_doc` autónomos de Daniel | Búsqueda semántica, recall por similitud |
+
+## Flujo de ingest
+
+```mermaid
+flowchart LR
+  subgraph Agentes
+    IATL[@iatl]
+    DAN[@pfi-tl-peer-daniel]
+    CR[@pfi-cr-analyst]
+  end
+
+  subgraph Hub["~/.cursor/iatl-knowledge"]
+    ING[ingest.js]
+    QRY[query.js]
+  end
+
+  subgraph Stores
+    M[(MongoDB)]
+    C[(ChromaDB :8010)]
+  end
+
+  IATL --> ING
+  DAN --> ING
+  CR --> ING
+  ING --> M
+  ING --> C
+  QRY --> M
+  QRY --> C
 ```
 
-**Fortalezas Mongo hoy**
+## Setup inicial
 
-- Consultas por ticket, sprint, status — determinísticas
-- Cierre HITL, retención `retentionDays`, poda
-- Bajo volumen (~decenas de learnings activos) — suficiente
-
-**Limitación**
-
-- No hay búsqueda semántica: *"¿algún ticket resolvió pool Postgres intermitente?"*
-- Spec-driven y CR `.md` viven en repo local/gitignored — no indexados para recall
-
-## ¿Dónde encaja Chroma?
-
-[Chroma](https://www.trychroma.com/) es una base **vectorial** para embeddings + similitud semántica.
-
-**No reemplaza Mongo.** Son capas complementarias:
-
-| Dimensión | Mongo (mantener) | Chroma (añadir opcional) |
-|-----------|------------------|---------------------------|
-| Ticket activo / ramas | ✅ Fuente de verdad | ❌ |
-| Cierre sprint / expiresAt | ✅ | ❌ |
-| Debates par TL estructurados | ✅ | ⚠️ Solo si queremos buscar por tema |
-| Recall por similitud | ❌ | ✅ |
-| Spec-driven / CR históricos | ❌ (solo path) | ✅ Indexar texto |
-| Patrones antipatrones | Parcial (bullets) | ✅ Búsqueda fuzzy |
-
-## Recomendación IATL
-
-### Veredicto: **Sí, pero como capa 2 — no como hub principal**
-
-```text
-                    @iatl
-                      │
-         ┌────────────┴────────────┐
-         ▼                         ▼
-   Mongo (operacional)      Chroma (semántico)
-   ticket, ramas, cierre    learnings archive
-                            spec-driven .md
-                            CODE-REVIEW .md
-                            incidentes postmortem
+```bash
+cd ~/.cursor/iatl-knowledge
+npm install
+node setup-agent.js          # detecta IDE, pregunta proyecto/sprint/arquitectura
+node migrate-to-chroma.js    # migra docs existentes de Mongo → Chroma
 ```
 
-### Fase 1 (bajo riesgo)
+## Chroma local
 
-- Persistencia local: `~/.cursor/iatl-knowledge/chroma/` (mismo patrón que Mongo local)
-- Indexar al **ingestar** o al **cerrar ticket**:
-  - Texto de `ticket_closures.summary`
-  - Learnings archivados (`learnings_archive`)
-  - Copias opcionales de `docs/spec-driven/PFI-*.md` (fuera del repo git)
-- Tool CLI: `query-chroma.js --semantic "pool postgres promise.all"`
-- @iatl consulta Chroma **después** de `query.js --ticket` cuando el tema es exploratorio
+```bash
+cd ~/.cursor/iatl-knowledge
+npx chroma run --path ./chroma-data --port 8010
+```
 
-### Fase 2 (opcional)
+Verificar:
 
-- Embeddings de código: `lambda-documento` draft, guards, patrones legacy
-- Integración con `@pfi-patterns-advisor` para recall de evaluaciones GoF
+```bash
+curl -s http://127.0.0.1:8010/api/v2/heartbeat
+node query.js --chroma-health
+node query.js --semantic-search "pool postgres secuencial qa"
+```
 
-### No hacer (ahora)
+## Config (`config.json`)
 
-- Migrar `working_branches` o `sessions` a Chroma
-- Reemplazar `close-ticket.js` / `ingest.js` por solo vectores
-- Chroma en CI/CD del backend PFI — es herramienta **de agente**, no de runtime lambda
+Campos nuevos v2.0:
 
-## Coste / complejidad
+| Campo | Descripción |
+|-------|-------------|
+| `ide` | `cursor` \| `antigravity` — detectado por `setup-agent.js` |
+| `projectContext` | Bounded context activo (ej. `lambda-documento`) |
+| `architectureTarget` | Objetivo arquitectónico (ej. `hexagonal-nestjs`) |
+| `chroma.host` | Default `127.0.0.1:8010` |
+| `chroma.collection` | Default `iatl_semantic_knowledge` |
 
-| Item | Impacto |
-|------|---------|
-| Dual write (Mongo + Chroma) | Medio — hook en `ingest.js` / `close-ticket.js` |
-| Modelo embeddings | API OpenAI / local `nomic-embed` — decisión de privacidad Aduana |
-| Drift índice vs Mongo | Poda Chroma alineada a `prune.js` |
-| Valor con <50 learnings | Bajo hoy; crece con historial multi-sprint |
+## Tipos de documento Chroma
 
-## Alternativas consideradas
+| `docType` | Origen | Uso |
+|-----------|--------|-----|
+| `learning` | learnings Mongo | Recall sprint/ticket |
+| `review_finding` | review_findings | Antipatrones similares |
+| `peer_discussion` | peer_discussions | Rationale Daniel |
+| `knowledge_source` | knowledge_sources | Fuentes enriquecidas |
+| `chroma_doc` | Daniel autónomo | Persistencia semántica ad-hoc |
 
-| Opción | Pros | Contras |
-|--------|------|---------|
-| Solo Mongo + más learnings | Simple | Sin similitud |
-| Mongo Atlas Vector Search | Un solo DB | Requiere Atlas; hoy es Mongo local |
-| Archivos + grep en spec-driven | Cero infra | No semántico |
-| **Chroma local** | Ligero, Python/TS, filesystem | Otro componente que operar |
+## Interfaz @iatl
 
-## Decisión propuesta (HITL)
+Sin cambios para el desarrollador. El hub enruta automáticamente:
+- Consultas operativas → Mongo (`query.js --sprint`, `--ticket`, etc.)
+- Recall semántico → Chroma (`query.js --semantic-search "..."`)
 
-1. **Mantener Mongo** como hub operativo (sin cambios).
-2. **Pilotar Chroma** en `iatl-knowledge` para recall semántico de cierres y CR.
-3. Criterio de éxito del piloto: @iatl resuelve en <2 consultas un incidente similar a PFI-1131 (pool PG) sin que el usuario recuerde el ticket.
+## Migración ejecutada (2026-06-19)
 
-## Siguiente paso si apruebas
-
-- `chroma/` + `ingest-chroma.js` en `~/.cursor/iatl-knowledge/`
-- Documentar en `mongo/README.md` § Capa semántica
-- Skill `pfi-iatl-knowledge-hub` — consulta opcional `--semantic`
+- 54 documentos migrados a colección `iatl_semantic_knowledge`
+- Puerto 8010, path `~/.cursor/iatl-knowledge/chroma-data`

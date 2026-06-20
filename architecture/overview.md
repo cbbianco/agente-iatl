@@ -15,7 +15,7 @@ Tres capas de inteligencia cooperativa + hub Mongo:
 | Gate post-código | @pfi-review-orchestrator | CR Claude + Bugbot |
 | Memoria sprint | Hub Mongo + `close-ticket.js` | Cierres HITL con retención parametrizable |
 | Fuentes issue | `pfi-ticket-source-resolver` | MCP-first Jira/… por número de historia |
-| Recall semántico (piloto) | Chroma local (propuesto) | Similitud learnings/CR — ver knowledge-layer-chroma.md |
+| Recall semántico | Chroma local v2.0 | Similitud learnings/CR — ver knowledge-layer-chroma.md |
 
 ## Principios
 

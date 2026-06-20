@@ -7,7 +7,10 @@ const CONFIG_PATH = join(ROOT, "config.json");
 
 const DEFAULTS = {
   project: "pfi-backend-core",
+  projectContext: "",
   sprintLabel: "",
+  architectureTarget: "hexagonal-lambda-nestjs",
+  ide: "unknown",
   retentionDays: 14,
 };
 

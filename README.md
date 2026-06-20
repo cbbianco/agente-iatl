@@ -11,7 +11,7 @@ Un sistema de agentes cooperativos para desarrollo spec-driven en PFI:
 1. **@iatl** — orquestador principal; única interfaz con el desarrollador (César).
 2. **@pfi-tl-peer-daniel** — par revisor con perfil TL Daniel; debate toda Propuesta **antes** del gate HITL.
 3. **@pfi-review-orchestrator** — pipeline post-código (CR analyst + Bugbot).
-4. **Hub Mongo local** — contexto, learnings, fuentes de conocimiento, debates par TL, **ramas en trabajo**.
+4. **Hub Mongo + Chroma local** — contexto operativo (Mongo) + recall semántico (Chroma v2.0).
 
 Objetivo: que @iatl **aprenda y mejore** con cada ciclo (Mongo + skills), con barra TL pragmática y estándar IATL hexagonal.
 
@@ -41,7 +41,7 @@ Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
 
 Ver [architecture/pipeline.md](architecture/pipeline.md).
 
-**Versión doc actual:** [0.4.0](CHANGELOG.md#040--2026-06-19)
+**Versión doc actual:** [0.5.0](CHANGELOG.md#050--2026-06-19)
 
 ## Resolución de tickets (MCP-first)
 
@@ -53,18 +53,26 @@ Al recibir un **número de historia** sin URL, el agente usa skill **`pfi-ticket
 
 Ver [skills/pfi-ticket-source-resolver.md](skills/pfi-ticket-source-resolver.md).
 
-## Capa de conocimiento (Mongo + Chroma)
+## Capa de conocimiento (Mongo + Chroma v2.0)
 
 - **Mongo** — hub operativo (tickets, ramas, cierres HITL): [mongo/](mongo/)
-- **Chroma (análisis)** — capa semántica opcional, no reemplaza Mongo: [architecture/knowledge-layer-chroma.md](architecture/knowledge-layer-chroma.md)
+- **Chroma** — capa semántica implementada (búsqueda embeddable): [architecture/knowledge-layer-chroma.md](architecture/knowledge-layer-chroma.md) · [chroma/](chroma/)
 
-## Instalación hub Mongo (una vez)
+## Instalación hub (una vez)
 
 ```bash
 cd ~/.cursor/iatl-knowledge
 npm install
+node setup-agent.js          # detecta IDE + config proyecto/sprint/arquitectura
 npm run init
 npm run seed-sources
+npm run migrate-chroma       # Mongo → Chroma (primera vez)
+```
+
+Arrancar Chroma:
+
+```bash
+npx chroma run --path ./chroma-data --port 8010
 ```
 
 Requisito: MongoDB local `127.0.0.1:27017`.
@@ -111,14 +119,14 @@ Ver [mongo/knowledge-sources.md](mongo/knowledge-sources.md).
 
 ## Índice
 
-- [CHANGELOG.md](CHANGELOG.md) — historial de versiones (v0.1.0 → v0.4.0)
+- [CHANGELOG.md](CHANGELOG.md) — historial de versiones (v0.1.0 → v0.5.0)
 - [architecture/](architecture/) — visión, pipeline, feedback loop
 - [agents/](agents/) — definiciones agente (copia)
 - [skills/](skills/) — catálogo skills
 - [mongo/](mongo/) — esquema, colecciones, comandos
 - [spec-driven/](spec-driven/) — flujo spec-driven
 - [working-branches.md](working-branches.md) — espejo ramas Git activas
-- [context/active-tickets.md](context/active-tickets.md) — snapshot tickets (PFI-1215 activo; 1172/1238 cerrados)
+- [context/active-tickets.md](context/active-tickets.md) — snapshot tickets (PFI-1120 pausada; PFI-1215 activo)
 - [docs/daily-branch-tracker.md](docs/daily-branch-tracker.md) — protocolo registro ramas
 - [docs/peer-gate-deadlock-protocol.md](docs/peer-gate-deadlock-protocol.md) — desacuerdo @iatl ↔ Daniel
 - [architecture/knowledge-layer-chroma.md](architecture/knowledge-layer-chroma.md) — Mongo vs Chroma

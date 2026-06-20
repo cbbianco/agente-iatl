@@ -1,17 +1,22 @@
 {
   "name": "iatl-knowledge",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Hub Mongo local — contexto y retroalimentación agentes IATL",
+  "description": "Hub IATL — Mongo (operativo) + ChromaDB (semántico)",
   "type": "module",
   "scripts": {
+    "setup": "node setup-agent.js",
+    "setup:quick": "node setup-agent.js --non-interactive",
     "init": "node init-indexes.js",
     "seed-sources": "node seed-knowledge-sources.js",
+    "migrate-chroma": "node migrate-to-chroma.js",
     "query": "node query.js",
     "ingest": "node ingest.js",
     "prune": "node prune.js"
   },
   "dependencies": {
+    "@chroma-core/default-embed": "^0.1.8",
+    "chromadb": "^3.0.14",
     "mongodb": "^6.12.0"
   }
 }
