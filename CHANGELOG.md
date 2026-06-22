@@ -7,6 +7,8 @@ Versionado semántico aproximado según commits del repo.
 
 ## [0.5.0] — 2026-06-19
 
+**Commit:** `b6c50ca` — *update: hub IATL v2.0 Mongo + ChromaDB en repo agente*  
+**Base anterior:** `c0728dd` — *feature: se actualizo funciones del agente*  
 **Tema:** Hub IATL v2.0 — Mongo operativo + ChromaDB semántico + PFI-1120 pausada
 
 ### Añadido
@@ -33,12 +35,108 @@ Versionado semántico aproximado según commits del repo.
 - `README.md` — instalación v2.0, índice Chroma
 - `working-branches.md` — **PFI-1120** (oficio fiscalía, pausada lunes)
 
+### Ejemplos de uso (v2.0 — validados en operación)
+
+#### 1. Arranque de sesión @iatl (Mongo operativo)
+
+```bash
+node ~/.cursor/iatl-knowledge/query.js --ide-detect
+node ~/.cursor/iatl-knowledge/query.js --project-config
+node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
+node ~/.cursor/iatl-knowledge/query.js --ticket PFI-1120
+```
+
+Respuesta real `--ide-detect`:
+
+```json
+{ "ide": "cursor", "label": "Cursor" }
+```
+
+Respuesta real `--project-config` (fragmento):
+
+```json
+{
+  "project_config": {
+    "project": "pfi-backend-core",
+    "projectContext": "Backend PFI: lambdas NestJS hexagonales...",
+    "sprintLabel": "2026-S12",
+    "architectureTarget": "hexagonal-lambda-nestjs",
+    "ide": "cursor",
+    "retentionDays": 14
+  }
+}
+```
+
+#### 2. Recall semántico (Chroma — sin saber el ticket exacto)
+
+```bash
+node ~/.cursor/iatl-knowledge/query.js --semantic-search "oficio fiscalia numero legacy"
+```
+
+Encuentra hallazgos CR de **PFI-1120** aunque la query no mencione el ticket:
+
+```json
+{
+  "query": "oficio fiscalia numero legacy",
+  "semantic_results": [
+    {
+      "text": "[medium] oficio-fiscalia-sustancias.mapper.ts:35 ... lookupTipoBulto() duplicada en 3 mappers",
+      "metadata": { "ticket": "PFI-1120", "docType": "review_finding", "severity": "medium" },
+      "distance": 0.28
+    }
+  ]
+}
+```
+
+#### 3. Health check Chroma
+
+```bash
+node ~/.cursor/iatl-knowledge/query.js --chroma-health
+```
+
+```json
+{
+  "chroma": {
+    "ok": true,
+    "host": "127.0.0.1",
+    "port": 8010,
+    "collection": "iatl_semantic_knowledge",
+    "count": 54
+  }
+}
+```
+
+#### 4. Daniel persiste conocimiento extendido (autónomo)
+
+```bash
+node ~/.cursor/iatl-knowledge/ingest.js chroma_doc \
+  --ticket PFI-1120 \
+  --doc-type knowledge_note \
+  --agent pfi-tl-peer-daniel \
+  --category draft-orchestration \
+  --text "En QA el pool Postgres es singleton: orquestación secuencial obligatoria, no Promise.all"
+```
+
+Indexa en Chroma para futuras búsquedas semánticas; Mongo conserva el índice operativo.
+
+#### 5. Setup inicial (nuevo IDE o máquina)
+
+```bash
+cd ~/.cursor/iatl-knowledge
+npm install
+node setup-agent.js          # detecta Cursor/Antigravity, pregunta proyecto/sprint
+npm run migrate-chroma       # primera migración Mongo → Chroma
+npx chroma run --path ./chroma-data --port 8010
+```
+
 ### Operación validada (sesión 2026-06-19)
 
 | Item | Resultado |
 |------|-----------|
 | Migración Chroma | 54 docs en `iatl_semantic_knowledge` |
 | PFI-1120 | Ramas feature + update + conflicts develop/qa pusheadas; sesión pausada |
+| Búsqueda semántica | Recall CR findings PFI-1120 con query en lenguaje natural |
+| Ramas activas Mongo | 5 ramas PFI-1120 + PFI-1039/1228/1215 registradas |
 
 ---
 
@@ -202,6 +300,20 @@ Release inicial del repo de documentación de agentes.
 - `architecture/overview.md`, `pipeline.md`, `feedback-loop.md`
 - `mongo/schema.md`, `knowledge-sources.md`, `knowledge-sources.seed.json`
 - `README.md`, `LOCATIONS.md`
+
+---
+
+## Comparativa rápida v0.4.0 → v0.5.0
+
+| Área | v0.4.0 | v0.5.0 |
+|------|--------|--------|
+| Capa semántica | Análisis propuesto (`knowledge-layer-chroma.md`) | **ChromaDB implementado** — 54 docs, búsqueda embeddable |
+| Setup agente | Manual (`config.json` a mano) | **`setup-agent.js`** — detecta IDE + preguntas interactivas |
+| Consultas hub | Solo Mongo (`--ticket`, `--learnings`) | **+ `--semantic-search`**, `--chroma-health`, `--ide-detect` |
+| Ingesta Daniel | Mongo + seed JSON | **+ `chroma_doc`** autónomo en Chroma |
+| Config sprint | `project`, `sprintLabel`, `retentionDays` | **+ `ide`, `projectContext`, `architectureTarget`, `chroma.*`** |
+| Scripts en repo | Mongo only | **+ chroma.js, ide-detect.js, setup-agent, migrate-to-chroma** |
+| Ticket activo | PFI-1215 / cierre 1172 | **PFI-1120 pausada** (oficio fiscalía, 5 ramas) |
 
 ---
 
