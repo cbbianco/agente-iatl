@@ -8,6 +8,13 @@
 └──────┬──────┘
        ▼
 ┌──────────────────────────────────────┐
+│ @iatl: clasificar ticket             │
+│  - query.js --classify-ticket         │
+│  - ingest ticket_classification       │
+│  - perfil fast|standard|full|light    │
+└──────┬───────────────────────────────┘
+       ▼
+┌──────────────────────────────────────┐
 │ @iatl: arranque                      │
 │  - profile-stack                      │
 │  - query.js --ticket                  │

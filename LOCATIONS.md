@@ -8,6 +8,11 @@
 | Hub Mongo + Chroma scripts | `~/.cursor/iatl-knowledge/` | `pfi-agent-architecture/mongo/scripts/` |
 | Chroma data (local) | `~/.cursor/iatl-knowledge/chroma-data/` | `pfi-agent-architecture/chroma/README.md` |
 | Setup agente | `~/.cursor/iatl-knowledge/setup-agent.js` | `pfi-agent-architecture/mongo/scripts/setup-agent.js` |
+| **CLI instalador portable** | `npm run install:iatl` (desde repo) | `pfi-agent-architecture/cli/iatl-install.mjs` |
+| **Docker stack** | `<proyecto>/.iatl-docker/` | `pfi-agent-architecture/docker/` |
+| Clasificación tickets | `query.js --classify-ticket` | `architecture/ticket-classification.md` |
+| Métricas calidad | `ingest.js ticket_metric` | `architecture/quality-metrics.md` |
+| Conflictos agentes | — | `docs/agent-conflict-resolution.md` |
 | Migración Chroma | `~/.cursor/iatl-knowledge/migrate-to-chroma.js` | `pfi-agent-architecture/mongo/scripts/migrate-to-chroma.js` |
 | Config sprint | `~/.cursor/iatl-knowledge/config.json` | `pfi-agent-architecture/mongo/config.example.json` |
 | Cierre HITL | `~/.cursor/iatl-knowledge/close-ticket.js` | `pfi-agent-architecture/mongo/scripts/close-ticket.js` |
@@ -21,5 +26,6 @@
 | Espejo ramas | Mongo `working_branches` | `pfi-agent-architecture/working-branches.md` |
 | Snapshot tickets | — | `pfi-agent-architecture/context/active-tickets.md` |
 | Peer gate deadlock | `~/.cursor/skills/pfi-tl-peer-daniel/SKILL.md` § Desacuerdo | `pfi-agent-architecture/docs/peer-gate-deadlock-protocol.md` |
+| **Conflictos agentes (todos)** | — | `pfi-agent-architecture/docs/agent-conflict-resolution.md` |
 
 **Regla:** cambios operativos en `~/.cursor/`; actualizar copia en repo cuando cambie la arquitectura de agentes o el contexto de tickets activos.

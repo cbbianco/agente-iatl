@@ -1,0 +1,42 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - iatl_mongo_data:/data/db
+
+  chroma:
+    image: chromadb/chroma:latest
+    restart: unless-stopped
+    ports:
+      - "8010:8000"
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes:
+      - iatl_chroma_data:/chroma/chroma
+
+  iatl-hub:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mongo
+      - chroma
+    environment:
+      IATL_MONGO_URI: mongodb://mongo:27017
+      IATL_MONGO_DB: ${IATL_MONGO_DB:-iatl_knowledge}
+      IATL_CHROMA_HOST: chroma
+      IATL_CHROMA_PORT: "8000"
+      IATL_IDE: docker
+    volumes:
+      - iatl_artifacts:/opt/iatl
+    working_dir: /opt/iatl/iatl-knowledge
+
+volumes:
+  iatl_mongo_data:
+  iatl_chroma_data:
+  iatl_artifacts:

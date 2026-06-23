@@ -1,0 +1,17 @@
+{
+  "name": "pfi-agent-architecture",
+  "version": "0.6.0",
+  "private": true,
+  "description": "Arquitectura multiagente IATL — instalador portable y documentación",
+  "type": "module",
+  "bin": {
+    "iatl-install": "./cli/iatl-install.mjs"
+  },
+  "scripts": {
+    "install:iatl": "node cli/iatl-install.mjs",
+    "install:iatl:quick": "node cli/iatl-install.mjs --non-interactive --runtime cursor"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -41,7 +41,7 @@ Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
 
 Ver [architecture/pipeline.md](architecture/pipeline.md).
 
-**Versión doc actual:** [0.5.0](CHANGELOG.md#050--2026-06-19)
+**Versión doc actual:** [0.6.0](CHANGELOG.md#060--2026-06-22)
 
 ## Resolución de tickets (MCP-first)
 
@@ -60,14 +60,37 @@ Ver [skills/pfi-ticket-source-resolver.md](skills/pfi-ticket-source-resolver.md)
 
 ## Instalación hub (una vez)
 
+### Opción A — CLI portable (recomendado v0.6)
+
+```bash
+cd pfi-agent-architecture
+npm run install:iatl
+# Pregunta: runtime (Cursor | VS Code | Claude Code | Antigravity | Docker)
+# + proyecto, sprint, arquitectura, legacy, días retención
+```
+
+### Opción B — Setup hub directo
+
 ```bash
 cd ~/.cursor/iatl-knowledge
 npm install
-node setup-agent.js          # detecta IDE + config proyecto/sprint/arquitectura
+node setup-agent.js          # detecta runtime + config proyecto/sprint/arquitectura
 npm run init
 npm run seed-sources
 npm run migrate-chroma       # Mongo → Chroma (primera vez)
 ```
+
+### Runtimes soportados
+
+| Runtime | Ubicación instalación |
+|---------|----------------------|
+| Cursor | `~/.cursor/{agents,skills,iatl-knowledge}` |
+| VS Code | `~/.iatl/` |
+| VS Code + Claude Code | `~/.claude/iatl/` |
+| Antigravity | `~/.antigravity/` |
+| Docker | `.iatl-docker/` en proyecto + `docker compose up` |
+
+Ver [docker/README.md](docker/README.md).
 
 Arrancar Chroma:
 
@@ -128,5 +151,9 @@ Ver [mongo/knowledge-sources.md](mongo/knowledge-sources.md).
 - [working-branches.md](working-branches.md) — espejo ramas Git activas
 - [context/active-tickets.md](context/active-tickets.md) — snapshot tickets (PFI-1120 pausada; PFI-1215 activo)
 - [docs/daily-branch-tracker.md](docs/daily-branch-tracker.md) — protocolo registro ramas
+- [docs/agent-conflict-resolution.md](docs/agent-conflict-resolution.md) — resolución formal conflictos entre agentes
 - [docs/peer-gate-deadlock-protocol.md](docs/peer-gate-deadlock-protocol.md) — desacuerdo @iatl ↔ Daniel
+- [architecture/diagrams.md](architecture/diagrams.md) — componentes, secuencia, decisiones
+- [architecture/ticket-classification.md](architecture/ticket-classification.md) — clasificación y fast path
+- [architecture/quality-metrics.md](architecture/quality-metrics.md) — métricas de calidad
 - [architecture/knowledge-layer-chroma.md](architecture/knowledge-layer-chroma.md) — Mongo vs Chroma

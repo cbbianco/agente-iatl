@@ -3,13 +3,14 @@
  * Wizard de instalación / reconfiguración del agente IATL.
  *
  * Flujo:
- *  1) Reconocimiento de IDE (Cursor | Antigravity)
- *  2) Preguntas de configuración (proyecto, contexto, sprint, arquitectura)
+ *  1) Reconocimiento de IDE/runtime (Cursor | VS Code | Antigravity | Docker)
+ *  2) Preguntas de configuración (proyecto, contexto, sprint, arquitectura, legacy)
  *  3) Persistencia config.json + init Mongo + seed + migración Chroma
  *
  * Uso:
  *   node setup-agent.js
  *   node setup-agent.js --non-interactive --project pfi-backend-core --sprint 2026-S12
+ *   node setup-agent.js --runtime cursor --legacy-path /path/to/legacy
  */
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
@@ -32,6 +33,9 @@ function parseArgs(argv) {
     else if (a === "--architecture" && argv[i + 1]) out.architectureTarget = argv[++i];
     else if (a === "--retention" && argv[i + 1]) out.retentionDays = argv[++i];
     else if (a === "--ide" && argv[i + 1]) out.ide = argv[++i];
+    else if (a === "--runtime" && argv[i + 1]) out.runtime = argv[++i];
+    else if (a === "--legacy-path" && argv[i + 1]) out.legacyMonolithPath = argv[++i];
+    else if (a === "--legacy-api" && argv[i + 1]) out.legacyApiBaseDev = argv[++i];
     else if (a === "--skip-migrate") out.skipMigrate = true;
   }
   return out;
@@ -55,11 +59,11 @@ function runNode(script, extraArgs = []) {
 
 async function main() {
   const args = parseArgs(process.argv);
-  const detectedIde = args.ide ?? detectIde();
+  const detectedIde = args.runtime ?? args.ide ?? detectIde();
   const current = loadConfig();
 
   console.log("\n=== IATL — Instalación / configuración ===\n");
-  console.log(`IDE detectado: ${ideLabel(detectedIde)} (${detectedIde})\n`);
+  console.log(`Runtime detectado: ${ideLabel(detectedIde)} (${detectedIde})\n`);
 
   let config = { ...current };
 
@@ -67,6 +71,7 @@ async function main() {
     config = {
       ...config,
       ide: detectedIde,
+      runtimeTarget: detectedIde,
       project: args.project ?? config.project ?? "pfi-backend-core",
       projectContext:
         args.projectContext ??
@@ -76,6 +81,8 @@ async function main() {
       architectureTarget:
         args.architectureTarget ?? config.architectureTarget ?? "hexagonal-lambda-nestjs",
       retentionDays: Number(args.retentionDays ?? config.retentionDays ?? 14),
+      legacyMonolithPath: args.legacyMonolithPath ?? config.legacyMonolithPath ?? "",
+      legacyApiBaseDev: args.legacyApiBaseDev ?? config.legacyApiBaseDev ?? "",
     };
   } else {
     const rl = createInterface({ input, output });
@@ -83,6 +90,7 @@ async function main() {
     console.log("--- Configuración del proyecto ---\n");
 
     config.ide = detectedIde;
+    config.runtimeTarget = detectedIde;
     config.project = await ask(rl, "Proyecto (repo/slug)", current.project ?? "pfi-backend-core");
     config.projectContext = await ask(
       rl,
@@ -95,6 +103,16 @@ async function main() {
       rl,
       "Arquitectura a utilizar",
       current.architectureTarget ?? "hexagonal-lambda-nestjs",
+    );
+    config.legacyMonolithPath = await ask(
+      rl,
+      "Ruta monolito legacy SAM (opcional)",
+      current.legacyMonolithPath ?? "",
+    );
+    config.legacyApiBaseDev = await ask(
+      rl,
+      "API legacy DEV base URL (opcional)",
+      current.legacyApiBaseDev ?? "",
     );
     const retention = await ask(rl, "Retención cierres HITL (días)", String(current.retentionDays ?? 14));
     config.retentionDays = Number(retention);
@@ -115,9 +133,9 @@ async function main() {
     runNode("migrate-to-chroma.js");
   }
 
-  console.log("\n✅ Agente IATL listo. Interfaz @iatl sin cambios.");
+  console.log("\n✅ Agente IATL listo.");
   console.log("   Consulta: node query.js --project-config");
-  console.log("   Semántica: node query.js --semantic-search \"pool postgres qa\"\n");
+  console.log("   Clasificar: node query.js --classify-ticket --summary \"...\" --issue-type Story\n");
 }
 
 main().catch((err) => {

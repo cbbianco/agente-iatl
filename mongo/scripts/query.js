@@ -68,6 +68,58 @@ async function main() {
     return;
   }
 
+  if (args["classify-ticket"]) {
+    const { classifyWithProfile } = await import("./lib/ticket-classifier.js");
+    const labels = (args.labels ?? "").split(",").filter(Boolean);
+    const result = classifyWithProfile({
+      summary: args.summary ?? "",
+      description: args.description ?? "",
+      issueType: args["issue-type"] ?? args.issueType ?? "",
+      labels,
+      priority: args.priority ?? "",
+    });
+    if (args.ticket) {
+      const stored = await db.collection("ticket_classifications").findOne(
+        { ticket: args.ticket },
+        { sort: { createdAt: -1 } },
+      );
+      console.log(JSON.stringify({ ticket: args.ticket, stored, ...result }, null, 2));
+    } else {
+      console.log(JSON.stringify(result, null, 2));
+    }
+    await closeDb();
+    return;
+  }
+
+  if (args["ticket-metrics"]) {
+    const filter = {};
+    if (args.ticket) filter.ticket = args.ticket;
+    if (args.project) filter.project = args.project;
+    const rows = await db
+      .collection("ticket_metrics")
+      .find(filter)
+      .sort({ createdAt: -1 })
+      .limit(Number(args.limit ?? 50))
+      .toArray();
+    const aggregate = rows.length
+      ? {
+          count: rows.length,
+          avgDurationMinutes:
+            rows.reduce((s, r) => s + (r.durationMinutes ?? 0), 0) / rows.length,
+          avgPeerReviewBugs:
+            rows.reduce((s, r) => s + (r.peerReviewBugsFound ?? 0), 0) / rows.length,
+          avgFinalReviewBugs:
+            rows.reduce((s, r) => s + (r.finalReviewBugsFound ?? 0), 0) / rows.length,
+          proposalAcceptanceRate:
+            rows.filter((r) => r.proposalAcceptedFirstTry).length / rows.length,
+          reworkRate: rows.filter((r) => (r.reworkRounds ?? 0) > 0).length / rows.length,
+        }
+      : null;
+    console.log(JSON.stringify({ ticket_metrics: rows, aggregate }, null, 2));
+    await closeDb();
+    return;
+  }
+
   if (args["active-learnings"]) {
     const rows = await db
       .collection("learnings")
@@ -202,7 +254,7 @@ async function main() {
   }
 
   console.error(
-    "Uso: query.js --ticket PFI-XXXX | --active-learnings | --tag patterns | --session <id> | --knowledge-sources [--category X] | --peer-discussions [--ticket PFI-XXXX] | --working-branches [--ticket PFI-XXXX] [--status active] | --ticket-closure --ticket PFI-XXXX | --project-config | --semantic-search \"texto\" [--category X] | --chroma-health | --ide-detect",
+    "Uso: query.js --ticket PFI-XXXX | --active-learnings | --tag patterns | --session <id> | --knowledge-sources [--category X] | --peer-discussions [--ticket PFI-XXXX] | --working-branches [--ticket PFI-XXXX] [--status active] | --ticket-closure --ticket PFI-XXXX | --project-config | --semantic-search \"texto\" [--category X] | --chroma-health | --ide-detect | --classify-ticket --summary \"...\" [--issue-type Bug] [--labels a,b] [--ticket PFI-XXXX] | --ticket-metrics [--ticket PFI-XXXX] [--project pfi-backend-core]",
   );
   process.exit(1);
 }

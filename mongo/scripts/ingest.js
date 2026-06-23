@@ -44,7 +44,7 @@ async function main() {
   const type = args._[0];
   if (!type) {
     console.error(
-      "Tipo requerido: learning | review_finding | pattern_eval | review_meta | session | knowledge_source | peer_discussion | working_branch | chroma_doc",
+      "Tipo requerido: learning | review_finding | pattern_eval | review_meta | session | knowledge_source | peer_discussion | working_branch | chroma_doc | ticket_classification | ticket_metric",
     );
     process.exit(1);
   }
@@ -176,6 +176,56 @@ async function main() {
         },
         { upsert: true },
       );
+      break;
+    }
+
+    case "ticket_classification": {
+      const { classifyWithProfile } = await import("./lib/ticket-classifier.js");
+      const labels = (args.labels ?? "").split(",").filter(Boolean);
+      const classified = classifyWithProfile({
+        summary: args.summary ?? "",
+        description: args.description ?? "",
+        issueType: args["issue-type"] ?? "",
+        labels,
+      });
+      await db.collection("ticket_classifications").insertOne({
+        ...doc,
+        ...classified,
+        issueType: args["issue-type"] ?? "",
+        summary: args.summary ?? "",
+        source: args.source ?? "iatl",
+      });
+      break;
+    }
+
+    case "ticket_metric": {
+      const { loadConfig } = await import("./lib/config.js");
+      const config = loadConfig();
+      let payload = {};
+      if (args["payload-file"]) {
+        payload = JSON.parse(readFileSync(args["payload-file"], "utf8"));
+      }
+      await db.collection("ticket_metrics").insertOne({
+        ...doc,
+        project: args.project ?? config.project,
+        classification: args.classification ?? payload.classification ?? "",
+        analysisPath: args["analysis-path"] ?? payload.analysisPath ?? "",
+        startedAt: payload.startedAt ? new Date(payload.startedAt) : doc.createdAt,
+        closedAt: payload.closedAt ? new Date(payload.closedAt) : null,
+        durationMinutes: Number(args["duration-minutes"] ?? payload.durationMinutes ?? 0),
+        peerReviewBugsFound: Number(
+          args["peer-bugs"] ?? payload.peerReviewBugsFound ?? 0,
+        ),
+        finalReviewBugsFound: Number(
+          args["final-bugs"] ?? payload.finalReviewBugsFound ?? 0,
+        ),
+        reworkRounds: Number(args["rework-rounds"] ?? payload.reworkRounds ?? 0),
+        proposalAcceptedFirstTry:
+          args["accepted-first"] === "true" || payload.proposalAcceptedFirstTry === true,
+        peerDeadlocks: Number(args["peer-deadlocks"] ?? payload.peerDeadlocks ?? 0),
+        source: args.source ?? "iatl",
+        ...payload,
+      });
       break;
     }
 

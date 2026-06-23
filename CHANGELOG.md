@@ -5,6 +5,35 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.6.0] — 2026-06-22
+
+**Tema:** Instalador portable multi-runtime, clasificación de tickets, métricas, diagramas y resolución formal de conflictos.
+
+### Añadido
+
+- **CLI `iatl-install`** — `cli/iatl-install.mjs` + `npm run install:iatl`
+  - Runtime: Cursor, VS Code, VS Code + Claude Code, Antigravity, Docker
+  - Preguntas: proyecto, contexto, sprint, arquitectura, legacy, retención HITL
+- **Docker stack** — `docker/Dockerfile`, `docker-compose.yml`, `.env.example`
+- **`ticket-classifier.js`** — clasificación bug|refactor|feature|arquitectura|investigacion
+- **`query.js --classify-ticket`** y **`--ticket-metrics`**
+- **`ingest.js ticket_classification`** y **`ticket_metric`**
+- Colecciones Mongo: `ticket_classifications`, `ticket_metrics`
+- `architecture/diagrams.md` — componentes, secuencia, flujo decisiones
+- `architecture/ticket-classification.md` — perfiles fast|standard|full|light
+- `architecture/quality-metrics.md` — métricas de calidad + línea base evolutiva
+- `docs/agent-conflict-resolution.md` — matriz autoridad y escalamiento HITL
+
+### Cambiado
+
+- `setup-agent.js` — runtimeTarget, legacy paths, soporte multi-IDE
+- `lib/ide-detect.js` — vscode, vscode-claude, docker
+- `lib/config.js` — `runtimeTarget`, `claudeCode`, `legacyMonolithPath`
+- `agents/iatl.md` — paso 0 clasificación + métricas al cierre
+- `README.md`, `LOCATIONS.md`, `mongo/config.example.json`
+
+---
+
 ## [0.5.0] — 2026-06-19
 
 **Commit:** `b6c50ca` — *update: hub IATL v2.0 Mongo + ChromaDB en repo agente*  

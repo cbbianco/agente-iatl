@@ -1,5 +1,7 @@
 {
   "ide": "cursor",
+  "runtimeTarget": "cursor",
+  "claudeCode": false,
   "project": "pfi-backend-core",
   "projectContext": "Backend PFI lambdas NestJS hexagonales",
   "sprintLabel": "2026-S12",
@@ -12,5 +14,5 @@
     "port": 8010,
     "collection": "iatl_semantic_knowledge"
   },
-  "updatedAt": "2026-06-19T20:00:00.000Z"
+  "updatedAt": "2026-06-22T00:00:00.000Z"
 }

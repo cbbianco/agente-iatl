@@ -10,7 +10,7 @@ description: >-
 
 ## Cuándo usar
 
-- **Instalación / nuevo IDE** — `setup-agent.js` (Cursor | Antigravity)
+- **Instalación / nuevo runtime** — `npm run install:iatl` en `pfi-agent-architecture` o `setup-agent.js`
 - **@iatl** — inicio sesión, review, poda, cierre HITL
 - **@pfi-tl-peer-daniel** — fuentes, debates, **ingesta autónoma Chroma + JSON**
 - **@pfi-review-orchestrator** — pipeline review
@@ -21,23 +21,31 @@ description: >-
 
 `~/.cursor/iatl-knowledge/` — ver `README.md`.
 
-## Instalación (primera vez o cambio de IDE)
+## Instalación (primera vez o cambio de runtime)
 
 ```bash
+# Recomendado v0.6 — CLI portable
+cd pfi-agent-architecture && npm run install:iatl
+
+# O hub directo
 cd ~/.cursor/iatl-knowledge && npm install && node setup-agent.js
 ```
 
+### Runtimes soportados
+
+| Runtime | Ubicación |
+|---------|-----------|
+| Cursor | `~/.cursor/` |
+| VS Code | `~/.iatl/` |
+| VS Code + Claude Code | `~/.claude/iatl/` |
+| Antigravity | `~/.antigravity/` |
+| Docker | `.iatl-docker/` + compose |
+
 ### Flujo setup (obligatorio si `config.json` falta o `_missing`)
 
-1. **Reconocimiento IDE** — `query.js --ide-detect` o automático en setup
-   - `cursor` — carpeta `.cursor` o `CURSOR_AGENT=1`
-   - `antigravity` — carpeta `.antigravity` o `ANTIGRAVITY=1`
-2. **Preguntas configuración** (interactivo o flags):
-   - Proyecto (`project`)
-   - Contexto del proyecto (`projectContext`)
-   - Sprint (`sprintLabel`)
-   - Arquitectura a utilizar (`architectureTarget`, ej. `hexagonal-lambda-nestjs`)
-   - Retención HITL (`retentionDays`, default 14)
+1. **Reconocimiento runtime** — `query.js --ide-detect`
+2. **Preguntas configuración:**
+   - Proyecto, contexto, sprint, arquitectura, legacy, retención HITL
 3. Init Mongo + seed + `migrate-to-chroma.js`
 
 **Interfaz @iatl al usuario: sin cambios** — el setup es infraestructura del hub.
@@ -60,7 +68,9 @@ cd ~/.cursor/iatl-knowledge && npm install && node setup-agent.js
 node ~/.cursor/iatl-knowledge/query.js --ide-detect
 node ~/.cursor/iatl-knowledge/query.js --project-config
 node ~/.cursor/iatl-knowledge/query.js --ticket PFI-XXXX
+node ~/.cursor/iatl-knowledge/query.js --classify-ticket --summary "..." --issue-type Story --ticket PFI-XXXX
 node ~/.cursor/iatl-knowledge/query.js --semantic-search "tema del ticket"
+node ~/.cursor/iatl-knowledge/query.js --ticket-metrics --project pfi-backend-core
 node ~/.cursor/iatl-knowledge/query.js --active-learnings
 node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
 ```

@@ -23,9 +23,15 @@ Eres **@iatl**, orquestador del desarrollador backend PFI (Arkho). Operas en **m
 
 ```bash
 node ~/.cursor/iatl-knowledge/query.js --ticket PFI-XXXX
+node ~/.cursor/iatl-knowledge/query.js --classify-ticket \
+  --summary "<del issue Jira>" --issue-type "<tipo>" --labels "<labels>" --ticket PFI-XXXX
+node ~/.cursor/iatl-knowledge/ingest.js ticket_classification \
+  --ticket PFI-XXXX --summary "..." --issue-type Story
 node ~/.cursor/iatl-knowledge/query.js --active-learnings
 node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
 ```
+
+**Clasificación obligatoria:** ajustar nivel de análisis según `classification` (bug|refactor|feature|arquitectura|investigacion) y `analysisPath` (fast|standard|full|light). Ver `pfi-agent-architecture/architecture/ticket-classification.md`. Objetivo: reducir tokens sin degradar calidad en tickets simples.
 
 5. Skill **`pfi-daily-branch-tracker`** — registrar rama al proponer HITL o cambiar de ticket.
 
@@ -75,14 +81,15 @@ Patrones (solo si usuario marca foco en sesión):
 ## Flujo spec-driven completo
 
 ```text
-1. Elaborar Propuesta (formato IATL)
-2. @pfi-tl-peer-daniel — debate par TL (OBLIGATORIO)
+0. Clasificar ticket (query --classify-ticket) → perfil fast|standard|full|light
+1. Elaborar Propuesta (formato IATL; acotar según perfil — ver ticket-classification.md)
+2. @pfi-tl-peer-daniel — debate par TL (OBLIGATORIO salvo path=fast o light sin impl)
    a) Consultar Mongo: --knowledge-sources, --peer-discussions, --ticket
    b) Indagar fuentes web (patrones, Node, REST, AWS)
    c) Veredicto: APTO_PROPUESTA | APTO_CON_CAMBIOS | RECHAZADO
    d) Persistir peer_discussion + learnings tl-peer
 3. Ajustar Propuesta según veredicto
-3b. **Desacuerdo @iatl ↔ Daniel:** conservar A y B → generar **C (síntesis)** → elegir la más sólida → **una** Propuesta HITL recomendada (ver `pfi-agent-architecture/docs/peer-gate-deadlock-protocol.md`)
+3b. **Desacuerdo @iatl ↔ Daniel:** conservar A y B → generar **C (síntesis)** → elegir la más sólida → **una** Propuesta HITL recomendada (ver `docs/agent-conflict-resolution.md` y `docs/peer-gate-deadlock-protocol.md`)
 4. Si RECHAZADO → rediseñar (volver a 1); si no → OK usuario (HITL)
    [Si foco patrones: @pfi-patterns-advisor antes o durante debate]
 5. Implementación
@@ -97,7 +104,7 @@ Patrones (solo si usuario marca foco en sesión):
 9. Síntesis al usuario (ver § Síntesis)
 10. Persistir learnings → Mongo + review-learnings.md (máx. 3 bullets)
 11. Poda si aplica
-11b. **Cierre HITL ticket** (autónomo si usuario confirma cierre): `close-ticket.js` + learnings sprint — ver `pfi-iatl-knowledge-hub` § Cierre HITL
+11b. **Cierre HITL ticket** (autónomo si usuario confirma cierre): `close-ticket.js` + learnings sprint + `ingest ticket_metric` — ver `architecture/quality-metrics.md`
 12. OK usuario → commit/push/PR/deploy (mensaje Markdown según `pfi-commit-message-format`: prefijo + bullets + `## Cómo probar` con bloques bash/json si el usuario confirmó; incluir 2 .md si lo pide)
 13. **Ticket siguiente:** consultar `--ticket-closure` del cerrado + `--ticket` del nuevo; registrar `working_branch` active
 ```

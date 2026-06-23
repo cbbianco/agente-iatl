@@ -49,6 +49,13 @@ async function main() {
 
   await db.collection("project_config").createIndex({ project: 1 }, { unique: true });
 
+  await db.collection("ticket_classifications").createIndex({ ticket: 1, createdAt: -1 });
+  await db.collection("ticket_classifications").createIndex({ classification: 1 });
+
+  await db.collection("ticket_metrics").createIndex({ ticket: 1, createdAt: -1 });
+  await db.collection("ticket_metrics").createIndex({ project: 1, closedAt: -1 });
+  await db.collection("ticket_metrics").createIndex({ classification: 1, analysisPath: 1 });
+
   console.log("✅ Índices creados en iatl_knowledge");
   await closeDb();
 }

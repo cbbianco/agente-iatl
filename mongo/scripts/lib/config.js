@@ -11,7 +11,11 @@ const DEFAULTS = {
   sprintLabel: "",
   architectureTarget: "hexagonal-lambda-nestjs",
   ide: "unknown",
+  runtimeTarget: "cursor",
+  claudeCode: false,
   retentionDays: 14,
+  legacyMonolithPath: "",
+  legacyApiBaseDev: "",
 };
 
 export function getConfigPath() {
@@ -28,6 +32,7 @@ export function loadConfig() {
       ...DEFAULTS,
       ...raw,
       retentionDays: Number(raw.retentionDays ?? DEFAULTS.retentionDays),
+      claudeCode: Boolean(raw.claudeCode),
     };
   } catch {
     return { ...DEFAULTS, _parseError: true };
@@ -42,6 +47,7 @@ export function saveConfig(partial) {
     ...current,
     ...partial,
     retentionDays: Number(partial.retentionDays ?? current.retentionDays ?? DEFAULTS.retentionDays),
+    claudeCode: partial.claudeCode ?? current.claudeCode ?? false,
     updatedAt: new Date().toISOString(),
   };
   writeFileSync(CONFIG_PATH, `${JSON.stringify(next, null, 2)}\n`, "utf8");
