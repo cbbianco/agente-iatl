@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "description": "Fuentes extensibles para @pfi-patterns-advisor. Añadir entradas sin modificar el agente.",
+  "sources": [
+    {
+      "id": "refactoring-guru-strategy",
+      "name": "Refactoring.Guru — Strategy",
+      "url": "https://refactoring.guru/design-patterns/strategy",
+      "tags": ["strategy", "gof", "behavioral"],
+      "enabled": true
+    },
+    {
+      "id": "refactoring-guru-command",
+      "name": "Refactoring.Guru — Command",
+      "url": "https://refactoring.guru/design-patterns/command",
+      "tags": ["command", "gof", "behavioral"],
+      "enabled": true
+    },
+    {
+      "id": "refactoring-guru-registry",
+      "name": "Refactoring.Guru — Registry (nota: no es GoF; contrastar con mapa PFI)",
+      "url": "https://refactoring.guru/design-patterns/registry",
+      "tags": ["registry", "structural"],
+      "enabled": true
+    },
+    {
+      "id": "martin-fowler-registry",
+      "name": "Martin Fowler — Registry (PoEAA)",
+      "url": "https://martinfowler.com/eaaCatalog/registry.html",
+      "tags": ["registry", "poeaa"],
+      "enabled": true
+    },
+    {
+      "id": "refactoring-guru-template-method",
+      "name": "Refactoring.Guru — Template Method",
+      "url": "https://refactoring.guru/design-patterns/template-method",
+      "tags": ["template-method", "gof", "behavioral"],
+      "enabled": true
+    },
+    {
+      "id": "typeorm-pagination",
+      "name": "TypeORM — Pagination con joins",
+      "url": "https://typeorm.io/select-query-builder#adding-pagination",
+      "tags": ["pagination", "typeorm", "infrastructure"],
+      "enabled": true
+    }
+  ]
+}

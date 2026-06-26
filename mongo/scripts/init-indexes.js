@@ -9,6 +9,7 @@ async function main() {
   const db = await getDb();
 
   await db.collection("sessions").createIndex({ ticket: 1, createdAt: -1 });
+  await db.collection("sessions").createIndex({ ticket: 1, status: 1, updatedAt: -1 });
   await db.collection("sessions").createIndex({ sessionId: 1 }, { unique: true });
 
   await db.collection("review_findings").createIndex({ ticket: 1, createdAt: -1 });
@@ -19,7 +20,7 @@ async function main() {
   await db.collection("pattern_evals").createIndex({ component: 1 });
   await db.collection("pattern_evals").createIndex({ tags: 1 });
 
-  await db.collection("learnings").createIndex({ ticket: 1, createdAt: -1 });
+  await db.collection("learnings").createIndex({ ticket: 1, isResumeTrace: 1, status: 1 });
   await db.collection("learnings").createIndex({ status: 1, createdAt: -1 });
   await db.collection("learnings").createIndex({ category: 1 });
 

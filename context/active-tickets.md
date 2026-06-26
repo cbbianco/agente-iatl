@@ -2,74 +2,65 @@
 
 > Espejo de contexto operativo. Specs completos en `pfi-backend-core/docs/spec-driven/` (local, gitignored).
 
-**Última sync:** 2026-06-19
+**Última sync:** 2026-06-26
 
 ---
 
-## PFI-1215 — Generación documental Seguridad — **ACTIVO**
+## PFI-1205 — Catálogo método detección AF — **ACTIVO**
 
 | Campo | Valor |
 |-------|-------|
-| Lambda | `lambda-documento` |
-| HU | Acta Incautación, Oficio Denuncia, Acta Entrega Imputados/Especies, Set Fotográfico |
-| Rama feature | `pfi-1215/feature/generacion-documental-seguridad` (base PFI-1149 migración draft) |
-| Conflict develop/qa | Creadas y pusheadas — alineadas a develop/qa |
-| Gap vs develop | Faltan tipos 7+ (Acta Incautación, Oficio Denuncia); reutilizar 2/3/4 (mercancías/imputados/fotos) |
-| Nota | Feature branch PFI-1149 desactualizada vs develop — rebase recomendado antes de codificar |
+| Lambda | `lambda-catalogo` |
+| Endpoint | `GET /catalogo/tipo-metodo-deteccion` |
+| Rama activa | `conflict_resolutions/develop/pfi-1205/feature/catalogo-metodo-deteccion-af` |
+| Commit | `8d0d23c8` |
+| Estado | Paridad legacy DEV 10/10 · sesión IATL `active` |
+| Nota | Feature + conflict qa mergeadas; develop conflict en integración |
 
 ---
 
-## PFI-1228 — POST personas domicilio — **ACTIVO**
+## PFI-1183 — Resultado equipo detección — **ACTIVO**
 
 | Campo | Valor |
 |-------|-------|
-| Lambda | `lambda-casos` |
-| Endpoint | `POST/PUT/GET /casos/{numeroCaso}/personas` |
-| Rama | `pfi-1228/fix/post-persona-paridad-legacy` |
-| Commit | `81733dd4` — domicilio + geo numérica en POST |
-| Pendiente | QA DEV + ramas conflict develop/qa |
-
----
-
-## PFI-1039 — Traza denuncias fecha Chile
-
-| Campo | Valor |
-|-------|-------|
-| Rama | `pfi-1039/fix/traza-denuncia-decare-fecha-chile` (base `develop`) |
-| Fix | `fechaAuditoriaIsoChile` en traza DECARE |
-| Estado | **active** — pendiente implementar |
+| Rama | `pfi-1183/feature/resultado-equipo-deteccion` |
+| Alcance | Campo AF + grilla + vínculo oficio fiscal 1120 |
 
 ---
 
 ## Cerrados recientes (HITL)
 
-### PFI-1172 — Hermes validar documento — **CERRADO** (2026-06-19)
+### PFI-1243 — Especies conexas informacion-entrega — **CERRADO** (2026-06-26)
 
 | Campo | Valor |
 |-------|-------|
-| Lambda | `lambda-documento` + authorizer + `RolesGuard` api-key |
-| Endpoint | `GET /documento/validar/{idDocumento}` |
-| Commits | feature `af72e845` (cómo probar) · conflict develop `2c187842` · conflict qa `c3793382` |
-| Alcance | Solo documento + guard; **sin marcaje** |
+| Lambda | `lambda-casos` |
+| Endpoints | `PUT/GET .../personas/informacion-entrega` |
+| QA | DEV 9/9 (sync delete/update/insert) |
+| Hub | `ticket_closures` + `resume_context` (traza sesión profile DEV) |
+| Commits | feature `e8978b02` · develop `76f6f105` · qa `ae0c41ac` |
 
-### PFI-1238 — Marcaje manual — **CERRADO** (2026-06-19)
+### PFI-1245 — Roles mercancía área riesgo — **CERRADO** (2026-06-26)
 
 | Campo | Valor |
 |-------|-------|
-| Lambda | `lambda-marcaje-manual` · `POST /marcaje-manual` |
-| Hub | `ticket_closures` · sprint `2026-S12` · expira 2026-07-03 |
+| Lambda | `lambda-casos` |
+| Política | GET todos roles · mutaciones solo Fiscalizador |
+
+### PFI-1244 — FK cigarrillos — **CERRADO** (2026-06-26)
+
+| Campo | Valor |
+|-------|-------|
+| Fix | `idCantidadCajetilla` 0→NULL en POST/PUT mercancía cigarrillo |
 
 ---
 
-## Resolución de tickets (agente)
-
-Al recibir número sin URL → skill **`pfi-ticket-source-resolver`**: pregunta Jira/ClickUp/etc., MCP-first si disponible.
-
-## Consultas Mongo
+## Recuperación de sesión (@iatl)
 
 ```bash
-node ~/.cursor/iatl-knowledge/query.js --project-config
 node ~/.cursor/iatl-knowledge/query.js --ticket PFI-XXXX
+# → session_context.resume_context (traza último learning)
 node ~/.cursor/iatl-knowledge/query.js --ticket-closure --ticket PFI-XXXX
-node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
 ```
+
+Al retomar ticket cerrado o relacionado: leer `resume_context` **antes** del chat.

@@ -12,6 +12,8 @@
  *   node query.js --working-branches [--ticket PFI-XXXX] [--status active]
  */
 import { getDb, closeDb } from "./lib/mongo.js";
+import { loadConfig } from "./lib/config.js";
+import { pickResumeTrace, buildResumeContext, normalizeLearningEntry } from "./lib/learning-trace.js";
 
 function parseArgs(argv) {
   const out = {};
@@ -140,7 +142,6 @@ async function main() {
   }
 
   if (args["ticket-closure"] && args.ticket) {
-    const { loadConfig } = await import("./lib/config.js");
     const config = loadConfig();
     const closure = await db.collection("ticket_closures").findOne({
       ticket: args.ticket,
@@ -152,13 +153,30 @@ async function main() {
       .sort({ createdAt: -1 })
       .limit(10)
       .toArray();
-    console.log(JSON.stringify({ ticket: args.ticket, closure, learnings }, null, 2));
+    const resumeLearning = await db.collection("learnings").findOne({
+      ticket: args.ticket,
+      isResumeTrace: true,
+      status: "active",
+    });
+    const resumeFromLearnings = resumeLearning
+      ? normalizeLearningEntry({ text: resumeLearning.text, trace: resumeLearning.trace })
+      : pickResumeTrace(
+          learnings.map((l) => normalizeLearningEntry({ text: l.text, trace: l.trace })),
+        );
+    const resume_context =
+      closure?.resumeContext ??
+      buildResumeContext(resumeFromLearnings, args.ticket);
+    console.log(
+      JSON.stringify({ ticket: args.ticket, closure, learnings, resume_context }, null, 2),
+    );
     await closeDb();
     return;
   }
 
   if (args.ticket) {
-    const [findings, patterns, learnings, meta] = await Promise.all([
+    const config = loadConfig();
+    const [findings, patterns, learnings, meta, activeSession, classification, workingBranches, closure] =
+      await Promise.all([
       db
         .collection("review_findings")
         .find({ ticket: args.ticket, status: { $ne: "archived" } })
@@ -183,9 +201,60 @@ async function main() {
         .sort({ createdAt: -1 })
         .limit(5)
         .toArray(),
+      db.collection("sessions").findOne(
+        { ticket: args.ticket, status: { $in: ["active", "active_spec_driven", "open"] } },
+        { sort: { updatedAt: -1 } },
+      ),
+      db.collection("ticket_classifications").findOne(
+        { ticket: args.ticket },
+        { sort: { createdAt: -1 } },
+      ),
+      db
+        .collection("working_branches")
+        .find({ ticket: args.ticket, status: "active" })
+        .sort({ updatedAt: -1 })
+        .toArray(),
+      db.collection("ticket_closures").findOne({
+        ticket: args.ticket,
+        project: config.project,
+      }),
     ]);
+    const resumeLearning = await db.collection("learnings").findOne({
+      ticket: args.ticket,
+      isResumeTrace: true,
+      status: "active",
+    });
+    const resumeFromLearnings = resumeLearning
+      ? normalizeLearningEntry({ text: resumeLearning.text, trace: resumeLearning.trace })
+      : pickResumeTrace(
+          learnings.map((l) => normalizeLearningEntry({ text: l.text, trace: l.trace })),
+        );
+    const resume_context =
+      closure?.resumeContext ??
+      buildResumeContext(resumeFromLearnings, args.ticket);
+    const sessionContext = {
+      mandate: "OBLIGATORIO: usar este bloque antes de reconstruir contexto desde el chat",
+      active_session: activeSession,
+      current_phase: activeSession?.currentPhase ?? null,
+      checkpoints: activeSession?.checkpoints ?? [],
+      classification,
+      working_branches: workingBranches,
+      resume_context,
+    };
     console.log(
-      JSON.stringify({ ticket: args.ticket, findings, patterns, learnings, meta }, null, 2),
+      JSON.stringify(
+        {
+          ticket: args.ticket,
+          session_context: sessionContext,
+          closure_summary: closure?.summary ?? null,
+          findings,
+          patterns,
+          learnings,
+          meta,
+        },
+        null,
+        2,
+      ),
     );
     await closeDb();
     return;

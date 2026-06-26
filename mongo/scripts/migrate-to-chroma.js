@@ -10,7 +10,7 @@ import { getDb, closeDb } from "./lib/mongo.js";
 import { upsertDocument, chromaHealth } from "./lib/chroma.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const DEFAULT_SEED = join(__dirname, "../skills/pfi-tl-peer-daniel/knowledge-sources.seed.json");
+const DEFAULT_SEED = join(__dirname, "../skills/pfi-tl-peer-daniel-analisis/knowledge-sources.seed.json");
 
 function docFromKnowledgeSource(src) {
   const lines = [

@@ -3,52 +3,43 @@
 > Fuente operativa: Mongo `working_branches` vía skill `pfi-daily-branch-tracker`.  
 > Actualizar este archivo al registrar/cerrar ramas.
 
-**Última sync:** 2026-06-19 (PFI-1120 pausada)
+**Última sync:** 2026-06-26
 
 ---
 
 ## Ramas activas
 
-1. **PFI-1120** · Oficio a Fiscalía (`tipoDocumento=1`) · **active (pausada — retomar lunes)**
-   - `pfi-1120/feature/oficio-fiscal` · commit `0fd5e642`
-   - `pfi-1120/update/oficio-fiscal-draft-fixes` · commit `07e6f57b` · fixes numeroOficio legacy + articuladoDelitoDroga
-   - Conflict develop feature: `conflict_resolutions/develop/pfi-1120/feature/oficio-fiscal` · `37cad943`
-   - Conflict develop update: `conflict_resolutions/develop/pfi-1120/update/oficio-fiscal-draft-fixes` · `6d07336a`
-   - Conflict qa feature: `conflict_resolutions/qa/pfi-1120/feature/oficio-fiscal` · `b2de472e`
-   - Pendiente: PRs, validación QA, posible `conflict_resolutions/qa/pfi-1120/update/oficio-fiscal-draft-fixes`
-   - Nota: orquestación **secuencial** en QA (no Promise.all — pool Postgres singleton)
+1. **PFI-1205** · `conflict_resolutions/develop/pfi-1205/feature/catalogo-metodo-deteccion-af` · base `develop` · **active**
+   - Lambda: `lambda-catalogo` · `GET /catalogo/tipo-metodo-deteccion`
+   - Commit: `8d0d23c8` · paridad legacy DEV 10/10 confirmada
+   - Feature/qa conflict: mergeadas previamente (`83e5031b`, `b567382f`)
 
-2. **PFI-1215** · `pfi-1215/feature/generacion-documental-seguridad` · base `PFI-1149/migration/...` · **active**
-   - Lambda: `lambda-documento` · HU2 generación documental Seguridad
-   - Conflict develop: `conflict_resolutions/develop/pfi-1215/feature/generacion-documental-seguridad`
-   - Conflict qa: `conflict_resolutions/qa/pfi-1215/feature/generacion-documental-seguridad`
-   - Nota: rebase sobre develop recomendado (migración draft ya en develop)
+2. **PFI-1183** · `pfi-1183/feature/resultado-equipo-deteccion` · base `main` · **active**
+   - Campo Resultado equipo detección AF + grilla + oficio fiscal 1120
 
-3. **PFI-1228** · `pfi-1228/fix/post-persona-paridad-legacy` · base `develop` · **active**
-   - Lambda: `lambda-casos` · POST personas domicilio + geo numérica
-   - Commit: `81733dd4` · pendiente QA DEV
-
-4. **PFI-1039** · `pfi-1039/fix/traza-denuncia-decare-fecha-chile` · base `develop` · **active**
-   - `fechaAuditoriaIsoChile` en traza DECARE
+3. **PFI-1244** · `TBD/pfi-1244` · **active** (placeholder — ver ramas fix mergeadas abajo)
 
 ---
 
 ## Ramas mergeadas / cerradas HITL (recientes)
 
-5. **PFI-1172** · `pfi-1172/feature/registro-hermes-validar-documento` · **merged (cierre 2026-06-19)**
-   - `GET /documento/validar/{idDocumento}` · Hermes + RolesGuard api-key
-   - Commits: feature `af72e845` · conflict develop `2c187842` · conflict qa `c3793382`
+4. **PFI-1243** · especies conexas informacion-entrega · **merged (cierre 2026-06-26)**
+   - `pfi-1243/feature/persistencia-especies-conexas-informacion-entrega` · `e8978b02`
+   - `conflict_resolutions/develop/pfi-1243/...` · `76f6f105`
+   - `conflict_resolutions/qa/pfi-1243/...` · `ae0c41ac`
+   - QA DEV 9/9 sync PUT especies conexas · learning trace: sesión profile DEV
 
-6. **PFI-1238** · `pfi-1238/feature/crear-marcaje-manual` · **merged (cierre 2026-06-19)**
-   - `POST /marcaje-manual` · commits feature `eaee6a8c`
+5. **PFI-1245** · roles mercancía área riesgo · **merged (2026-06-26)**
+   - GET todos roles PFI · POST/PUT/DELETE solo Fiscalizador
+   - Commits: feature `c5b774b5` · develop `809d2711` · qa `63d52810`
 
-7. **PFI-1152** · secuencial PG oficio fiscalía · PR #250 mergeado
+6. **PFI-1244** · fix FK cigarrillos · **merged (2026-06-26)**
+   - `pfi-1244/fix/registro-mercancia-cigarrillos` · `c0e49a12`
+   - normalizar `idCantidadCajetilla` 0→NULL
 
----
+7. **PFI-1205** · feature + conflict qa · **merged** (develop sigue activa para integración)
 
-## Abandonadas / no usar
-
-8. **PFI-1039** · `pfi-1039/fix/fecha-ocurrencia-traza-denuncia` · solo tests, base vieja — **abandoned**
+8. **PFI-1120** · oficio fiscal · **merged/pausado** · `0fd5e642`
 
 ---
 
@@ -56,7 +47,7 @@
 
 ```bash
 node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
-node ~/.cursor/iatl-knowledge/query.js --ticket-closure --ticket PFI-1172
+node ~/.cursor/iatl-knowledge/query.js --ticket-closure --ticket PFI-1243
 node ~/.cursor/iatl-knowledge/ingest.js working_branch \
   --ticket PFI-XXXX --branch "..." --base develop --role feature --status active \
   --notes "contexto una línea"

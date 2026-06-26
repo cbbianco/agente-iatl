@@ -11,7 +11,7 @@ import { getDb, closeDb } from "./lib/mongo.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_SEED = join(
   __dirname,
-  "../skills/pfi-tl-peer-daniel/knowledge-sources.seed.json",
+  "../skills/pfi-tl-peer-daniel-analisis/knowledge-sources.seed.json",
 );
 
 function parseArgs(argv) {

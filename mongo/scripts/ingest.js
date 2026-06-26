@@ -7,7 +7,8 @@
  *   node ingest.js review_finding --ticket PFI-1019 --severity high --location "a.ts:10" --summary "..." --source pfi-cr-analyst
  *   node ingest.js pattern_eval --ticket PFI-1019 --component ClaseX --declared strategy --real pipeline --sources "refactoring-guru-strategy"
  *   node ingest.js review_meta --ticket PFI-1019 --payload-file /tmp/paquete.json
- *   node ingest.js session --ticket PFI-1019 --branch "pfi-1019/feature/..." --architectura_target lambda-casos
+ *   node ingest.js session --ticket PFI-1019 --branch "pfi-1019/feature/..." --architectura_target lambda-casos [--status active_spec_driven]
+ *   node ingest.js session_checkpoint --ticket PFI-1019 --phase analisis|backlog|implementacion --summary "..."
  *   node ingest.js knowledge_source --id "..." --category design-patterns --name "..." --url "https://..." --tags "gof,strategy"
  *   node ingest.js peer_discussion --ticket PFI-1019 --verdict APTO_PROPUESTA --summary "..." --sources-used "refactoring-guru-catalog"
  *   node ingest.js peer_discussion --ticket-json /tmp/peer.json
@@ -44,7 +45,7 @@ async function main() {
   const type = args._[0];
   if (!type) {
     console.error(
-      "Tipo requerido: learning | review_finding | pattern_eval | review_meta | session | knowledge_source | peer_discussion | working_branch | chroma_doc | ticket_classification | ticket_metric",
+      "Tipo requerido: learning | review_finding | pattern_eval | review_meta | session | session_checkpoint | knowledge_source | peer_discussion | working_branch | chroma_doc | ticket_classification | ticket_metric",
     );
     process.exit(1);
   }
@@ -54,15 +55,25 @@ async function main() {
   const doc = { ticket, createdAt: now(), updatedAt: now() };
 
   switch (type) {
-    case "learning":
+    case "learning": {
+      let trace = null;
+      if (args["payload-file"]) {
+        const payload = JSON.parse(readFileSync(args["payload-file"], "utf8"));
+        trace = payload.trace ?? null;
+      }
       await db.collection("learnings").insertOne({
         ...doc,
+        project: args.project ?? "pfi-backend-core",
         category: args.category ?? "General",
         text: args.text ?? "",
+        trace,
+        hasTrace: Boolean(trace),
+        isResumeTrace: args["is-resume-trace"] === "true",
         status: "active",
         source: args.source ?? "iatl",
       });
       break;
+    }
 
     case "review_finding":
       await db.collection("review_findings").insertOne({
@@ -99,15 +110,84 @@ async function main() {
       break;
     }
 
-    case "session":
-      await db.collection("sessions").insertOne({
-        ...doc,
-        sessionId: args.sessionId ?? randomUUID(),
-        branch: args.branch ?? "",
-        architectura_target: args.architectura_target ?? "",
-        foco_patrones: args.foco_patrones === "true",
+    case "session": {
+      const status = args.status ?? "active";
+      const activeFilter = {
+        ticket,
+        status: { $in: ["active", "active_spec_driven", "open"] },
+      };
+      const existing = await db.collection("sessions").findOne(activeFilter, {
+        sort: { updatedAt: -1 },
       });
+      if (existing) {
+        await db.collection("sessions").updateOne(
+          { _id: existing._id },
+          {
+            $set: {
+              branch: args.branch ?? existing.branch ?? "",
+              architectura_target: args.architectura_target ?? existing.architectura_target ?? "",
+              status,
+              foco_patrones: args.foco_patrones === "true",
+              updatedAt: now(),
+            },
+          },
+        );
+      } else {
+        await db.collection("sessions").insertOne({
+          ...doc,
+          sessionId: args.sessionId ?? randomUUID(),
+          branch: args.branch ?? "",
+          architectura_target: args.architectura_target ?? "",
+          status,
+          foco_patrones: args.foco_patrones === "true",
+          currentPhase: args.phase ?? "",
+          checkpoints: [],
+        });
+      }
       break;
+    }
+
+    case "session_checkpoint": {
+      const phase = args.phase ?? "";
+      const validPhases = ["analisis", "backlog", "implementacion"];
+      if (!validPhases.includes(phase)) {
+        console.error(`--phase requerido: ${validPhases.join(" | ")}`);
+        process.exit(1);
+      }
+      const summary = args.summary ?? args.text ?? "";
+      if (!summary) {
+        console.error("--summary requerido para session_checkpoint");
+        process.exit(1);
+      }
+      const checkpoint = { phase, summary, at: now() };
+      const activeFilter = {
+        ticket,
+        status: { $in: ["active", "active_spec_driven", "open"] },
+      };
+      const existing = await db.collection("sessions").findOne(activeFilter, {
+        sort: { updatedAt: -1 },
+      });
+      if (existing) {
+        await db.collection("sessions").updateOne(
+          { _id: existing._id },
+          {
+            $set: { currentPhase: phase, updatedAt: now() },
+            $push: { checkpoints: checkpoint },
+          },
+        );
+      } else {
+        await db.collection("sessions").insertOne({
+          ...doc,
+          sessionId: randomUUID(),
+          branch: args.branch ?? "",
+          architectura_target: args.architectura_target ?? "",
+          status: "active",
+          currentPhase: phase,
+          checkpoints: [checkpoint],
+        });
+      }
+      break;
+    }
 
     case "knowledge_source": {
       const sourceId = args.id;

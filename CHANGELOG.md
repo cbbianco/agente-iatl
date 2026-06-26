@@ -5,6 +5,68 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.9.0] — 2026-06-26
+
+**Tema:** Learning trace en cierre HITL + sync operativa sprint S12.
+
+### Añadido
+
+- **`mongo/scripts/lib/learning-trace.js`** — normalización learnings + `resume_context` al retomar sesión
+- **`architecture/learning-trace-resume.md`** — diseño traza analítica (último bullet con `howWeGotHere`, `operationalRule`)
+- **`skills/pfi-tl-peer-daniel-analisis/`**, **`skills/pfi-tl-peer-daniel-implementacion/`**, **`skills/pfi-tl-peer-daniel/`** — espejo completo
+- **`skills/pfi-iatl-developer-profile/`** — profile stack operativo
+
+### Cambiado
+
+- **`mongo/scripts/close-ticket.js`**, **`query.js`**, **`ingest.js`**, **`init-indexes.js`** — soporte `trace` + `isResumeTrace` + `session_context.resume_context`
+- **`skills/pfi-iatl-knowledge-hub.md`** — § learnings con traza
+- **`working-branches.md`**, **`context/active-tickets.md`** — PFI-1243 cerrado, PFI-1205 activo
+- Agentes Daniel split + pipeline actualizado (desde 0.8.0 pendiente de commit)
+
+---
+
+## [0.8.0] — 2026-06-25
+
+**Tema:** Split agente par TL Daniel — análisis vs implementación.
+
+### Añadido
+
+- **`agents/pfi-tl-peer-daniel-analisis.md`** — debate diseño/spec + post CR (modos A/B)
+- **`agents/pfi-tl-peer-daniel-implementacion.md`** — check plan pre-código + check código (modos C/D)
+- **`skills/pfi-tl-peer-daniel-analisis/`** — skill + reference + anti-patterns + seed
+- **`skills/pfi-tl-peer-daniel-implementacion/`** — skill implementación
+
+### Cambiado
+
+- **`agents/pfi-tl-peer-daniel.md`** — alias de daniel-análisis
+- **`agents/iatl.md`** — flujo spec-driven con gates C/D implementación
+- **`skills/pfi-iatl-developer-profile/`** — catálogo y profile-stack actualizados
+- **`mongo/scripts/lib/ticket-classifier.js`** — sugiere ambos agentes Daniel según perfil
+
+---
+
+## [0.7.0] — 2026-06-23
+
+**Tema:** Perfil desarrollador IATL v1.6 — orquestación multi-ticket, triage review, rol corregido.
+
+### Añadido
+
+- **`skills/pfi-iatl-developer-profile/`** — espejo completo del profile stack operativo (`~/.cursor/skills/`)
+  - Modos sesión: debate | implementación | operación
+  - Triage review externo (falso positivo | aplicable | deuda preexistente | diferido)
+  - Sesiones multi-ticket + hub Mongo
+  - Clasificación ticket → Fast/Standard/Full
+  - Visión IATL agnóstico IDE
+
+### Cambiado
+
+- `agents/iatl.md` — modos de sesión + triage review externo
+- `skills/catalog.md` — referencia al profile en repo
+- `LOCATIONS.md` — ruta profile stack en repo
+- Rol desarrollador: **Full Stack Senior** (IC) — eliminada etiqueta incorrecta "tech lead"
+
+---
+
 ## [0.6.0] — 2026-06-22
 
 **Tema:** Instalador portable multi-runtime, clasificación de tickets, métricas, diagramas y resolución formal de conflictos.

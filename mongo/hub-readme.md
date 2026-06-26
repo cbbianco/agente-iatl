@@ -73,7 +73,7 @@ node setup-agent.js --non-interactive \
 | `peer_discussion` | Debates Daniel |
 | `review_finding` | Hallazgos extendidos |
 | `pattern_eval` | Narrativa patrones |
-| `knowledge_note` | Aportes autónomos @pfi-tl-peer-daniel |
+| `knowledge_note` | Aportes autónomos @pfi-tl-peer-daniel-analisis / @pfi-tl-peer-daniel-implementacion |
 
 ## Comandos
 
@@ -118,6 +118,7 @@ review-learnings.md (vista humana)
 | Agente | Mongo | Chroma |
 |--------|-------|--------|
 | @iatl | sessions, learnings | chroma_doc (opcional) |
-| @pfi-tl-peer-daniel | peer_discussions, knowledge_sources | **chroma_doc autónomo** |
+| @pfi-tl-peer-daniel-analisis | peer_discussions, knowledge_sources | **chroma_doc autónomo** |
+| @pfi-tl-peer-daniel-implementacion | peer_discussions, learnings impl | **chroma_doc autónomo** |
 | @pfi-cr-analyst | review_findings | vía migrate / ingest |
 | @pfi-patterns-advisor | pattern_evals | vía migrate |

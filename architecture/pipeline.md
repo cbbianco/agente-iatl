@@ -32,7 +32,7 @@
 └──────┬───────────────────────────────┘
        ▼
 ┌──────────────────────────────────────┐
-│ @pfi-tl-peer-daniel (OBLIGATORIO)    │
+│ @pfi-tl-peer-daniel-analisis (OBLIGATORIO) │
 │  - query --knowledge-sources          │
 │  - WebFetch fuentes por categoría     │
 │  - anti-patterns-carlos               │
@@ -54,7 +54,17 @@
 └──────┬───────────────────────────────┘
        ▼ OK
 ┌──────────────────────────────────────┐
+│ @pfi-tl-peer-daniel-implementacion   │
+│  modo C — check plan (OBLIGATORIO)   │
+└──────┬───────────────────────────────┘
+       ▼
+┌──────────────────────────────────────┐
 │ Implementación (estándar IATL)       │
+└──────┬───────────────────────────────┘
+       ▼
+┌──────────────────────────────────────┐
+│ @pfi-tl-peer-daniel-implementacion   │
+│  modo D — check código               │
 └──────┬───────────────────────────────┘
        ▼
 ┌──────────────────────────────────────┐

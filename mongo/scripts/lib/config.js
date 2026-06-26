@@ -16,6 +16,11 @@ const DEFAULTS = {
   retentionDays: 14,
   legacyMonolithPath: "",
   legacyApiBaseDev: "",
+  apiDevBase: "",
+  codeReviewFolder: "",
+  catalogSourceOfTruth: "scripts/catalogo",
+  requireMongoQueryOnTicketStart: true,
+  sessionCheckpointsEnabled: true,
 };
 
 export function getConfigPath() {

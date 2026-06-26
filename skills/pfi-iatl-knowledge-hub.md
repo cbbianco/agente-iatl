@@ -3,16 +3,17 @@ name: pfi-iatl-knowledge-hub
 description: >-
   Hub IATL híbrido: Mongo (operativo) + ChromaDB (semántico). Sessions, findings,
   learnings, búsqueda embeddable. Setup-agent detecta IDE y configura proyecto/sprint/
-  arquitectura. Usar al arrancar @iatl, @pfi-tl-peer-daniel, orquestador y tras review.
+  arquitectura. Usar al arrancar @iatl, @pfi-tl-peer-daniel-analisis, @pfi-tl-peer-daniel-implementacion, orquestador y tras review.
 ---
 
 # IATL Knowledge Hub — Mongo + ChromaDB
 
 ## Cuándo usar
 
-- **Instalación / nuevo runtime** — `npm run install:iatl` en `pfi-agent-architecture` o `setup-agent.js`
+- **Instalación / nuevo IDE** — `setup-agent.js` (Cursor | Antigravity)
 - **@iatl** — inicio sesión, review, poda, cierre HITL
-- **@pfi-tl-peer-daniel** — fuentes, debates, **ingesta autónoma Chroma + JSON**
+- **@pfi-tl-peer-daniel-analisis** — fuentes, debates análisis, **ingesta autónoma Chroma + JSON**
+- **@pfi-tl-peer-daniel-implementacion** — debates implementación, check plan/código
 - **@pfi-review-orchestrator** — pipeline review
 - **@pfi-cr-analyst** — contexto histórico ticket
 - **@pfi-patterns-advisor** — `--tag patterns` + `--semantic-search`
@@ -21,31 +22,23 @@ description: >-
 
 `~/.cursor/iatl-knowledge/` — ver `README.md`.
 
-## Instalación (primera vez o cambio de runtime)
+## Instalación (primera vez o cambio de IDE)
 
 ```bash
-# Recomendado v0.6 — CLI portable
-cd pfi-agent-architecture && npm run install:iatl
-
-# O hub directo
 cd ~/.cursor/iatl-knowledge && npm install && node setup-agent.js
 ```
 
-### Runtimes soportados
-
-| Runtime | Ubicación |
-|---------|-----------|
-| Cursor | `~/.cursor/` |
-| VS Code | `~/.iatl/` |
-| VS Code + Claude Code | `~/.claude/iatl/` |
-| Antigravity | `~/.antigravity/` |
-| Docker | `.iatl-docker/` + compose |
-
 ### Flujo setup (obligatorio si `config.json` falta o `_missing`)
 
-1. **Reconocimiento runtime** — `query.js --ide-detect`
-2. **Preguntas configuración:**
-   - Proyecto, contexto, sprint, arquitectura, legacy, retención HITL
+1. **Reconocimiento IDE** — `query.js --ide-detect` o automático en setup
+   - `cursor` — carpeta `.cursor` o `CURSOR_AGENT=1`
+   - `antigravity` — carpeta `.antigravity` o `ANTIGRAVITY=1`
+2. **Preguntas configuración** (interactivo o flags):
+   - Proyecto (`project`)
+   - Contexto del proyecto (`projectContext`)
+   - Sprint (`sprintLabel`)
+   - Arquitectura a utilizar (`architectureTarget`, ej. `hexagonal-lambda-nestjs`)
+   - Retención HITL (`retentionDays`, default 14)
 3. Init Mongo + seed + `migrate-to-chroma.js`
 
 **Interfaz @iatl al usuario: sin cambios** — el setup es infraestructura del hub.
@@ -64,16 +57,42 @@ cd ~/.cursor/iatl-knowledge && npm install && node setup-agent.js
 
 ## Consulta obligatoria (@iatl — inicio sesión)
 
+**R4 — Siempre antes de analizar un ticket:** ejecutar `query.js --ticket` y **usar `session_context` como fuente primaria**. Prohibido reconstruir progreso solo desde memoria del chat.
+
 ```bash
 node ~/.cursor/iatl-knowledge/query.js --ide-detect
 node ~/.cursor/iatl-knowledge/query.js --project-config
-node ~/.cursor/iatl-knowledge/query.js --ticket PFI-XXXX
-node ~/.cursor/iatl-knowledge/query.js --classify-ticket --summary "..." --issue-type Story --ticket PFI-XXXX
+node ~/.cursor/iatl-knowledge/query.js --ticket PFI-XXXX   # ← OBLIGATORIO: lee session_context.checkpoints
 node ~/.cursor/iatl-knowledge/query.js --semantic-search "tema del ticket"
-node ~/.cursor/iatl-knowledge/query.js --ticket-metrics --project pfi-backend-core
 node ~/.cursor/iatl-knowledge/query.js --active-learnings
 node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
 ```
+
+El bloque `session_context` incluye: sesión activa, `current_phase`, `checkpoints[]`, **`resume_context`** (traza del último learning con análisis), clasificación y ramas.
+
+## Checkpoints de sesión (progreso HU)
+
+Al cerrar cada fase, persistir checkpoint (no reconstruir en el siguiente turno):
+
+| Fase | `--phase` | Cuándo |
+|------|-----------|--------|
+| Análisis / spec-driven | `analisis` | root cause confirmado, evidencia curl/SQL |
+| Backlog | `backlog` | alcance acordado, pendientes listados |
+| Implementación | `implementacion` | fix/código aplicado o en curso |
+
+```bash
+node ingest.js session_checkpoint --ticket PFI-XXXX --phase analisis \
+  --summary "Root cause: idCantidadCajetilla=0 viola FK; fix: normalizar a NULL"
+
+node ingest.js session --ticket PFI-XXXX --branch "..." --architectura_target lambda-casos \
+  --status active_spec_driven
+```
+
+Cada sesión activa mantiene `checkpoints[]` con `{ phase, summary, at }` y `currentPhase`.
+
+## Catálogos BD (R7)
+
+Ids numéricos de catálogo: **`scripts/catalogo/*.sql`** o query SQL del usuario. **Nunca** inferir ids desde Swagger/ejemplos del controller. Ver `config.json` → `catalogSourceOfTruth`.
 
 ## config.json
 
@@ -98,6 +117,10 @@ node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
 | `retentionDays` | Retención cierres HITL (default 14) |
 | `legacyMonolithPath` | Opcional — monolito SAM |
 | `legacyApiBaseDev` | Opcional — API legacy DEV |
+| `apiDevBase` | API Gateway PFI dev (curls) |
+| `catalogSourceOfTruth` | R7: ruta relativa repo para ids catálogo (`scripts/catalogo`) |
+| `requireMongoQueryOnTicketStart` | R4: obligar `query.js --ticket` al arrancar |
+| `sessionCheckpointsEnabled` | Checkpoints analisis/backlog/implementacion en sesión |
 
 Si falta config → ejecutar `setup-agent.js` o preguntar campos al usuario.
 
@@ -106,9 +129,11 @@ Si falta config → ejecutar `setup-agent.js` o preguntar campos al usuario.
 | Evento | Mongo | Chroma |
 |--------|-------|--------|
 | Learning | `ingest.js learning` | auto vía migrate o `chroma_doc` |
+| **Checkpoint sesión** | `ingest.js session_checkpoint` | — |
+| **Sesión activa** | `ingest.js session` (upsert) | — |
 | Hallazgo CR | `review_finding` | `chroma_doc --doc-type review_finding` |
 | Fuente TL | `knowledge_source` | `chroma_doc --doc-type knowledge_source` |
-| Nota Daniel | opcional índice | `chroma_doc --agent pfi-tl-peer-daniel` |
+| Nota Daniel (análisis / impl) | opcional índice | `chroma_doc --agent pfi-tl-peer-daniel-analisis` o `pfi-tl-peer-daniel-implementacion` |
 | Rama | `working_branch` | — |
 | Sesión | `session` | — |
 
@@ -117,12 +142,12 @@ node ingest.js chroma_doc --ticket PFI-XXXX --doc-type knowledge_note \
   --agent pfi-tl-peer-daniel --category aws --text "Nota extendida..."
 ```
 
-## @pfi-tl-peer-daniel — autonomía conocimiento
+## @pfi-tl-peer-daniel-analisis / @pfi-tl-peer-daniel-implementacion — autonomía conocimiento
 
-Daniel **decide solo** cuándo persistir (sin pedir permiso):
+Ambos agentes Daniel **deciden solos** cuándo persistir (sin pedir permiso):
 
 1. `knowledge_sources` en Mongo (índice)
-2. `knowledge-sources.seed.json` si la fuente es estable
+2. `pfi-tl-peer-daniel-analisis/knowledge-sources.seed.json` si la fuente es estable
 3. `chroma_doc` con texto enriquecido (colección semántica)
 
 Consultar antes del veredicto:
@@ -134,7 +159,37 @@ node query.js --knowledge-sources --category design-patterns
 
 ## Cierre HITL (@iatl — autónomo)
 
-Sin cambios — ver `close-ticket.js` + `retentionDays`.
+Ver `close-ticket.js` + `retentionDays`.
+
+### Learnings con traza (último bullet)
+
+El **último** learning del cierre puede incluir análisis trazado — cómo llegamos, supuesto inicial vs hallazgo real, regla operativa. Se persiste en `ticket_closures.resumeContext` y en `learnings` con `isResumeTrace: true`.
+
+```json
+"learnings": [
+  "bullet técnico corto",
+  {
+    "text": "resumen operativo",
+    "trace": {
+      "title": "...",
+      "howWeGotHere": ["paso 1", "paso 2"],
+      "initialAssumption": "...",
+      "actualFinding": "...",
+      "operationalRule": "...",
+      "useWhenResuming": "...",
+      "evidence": {}
+    }
+  }
+]
+```
+
+```bash
+node close-ticket.js --ticket PFI-XXXX --payload-file /tmp/closure.json
+node query.js --ticket PFI-XXXX          # session_context.resume_context
+node query.js --ticket-closure --ticket PFI-XXXX
+```
+
+**Al retomar sesión:** `query.js --ticket` → leer `session_context.resume_context` **antes** de reconstruir desde el chat. Usar `trace.howWeGotHere`, `actualFinding` y `operationalRule` como contexto para nuevos análisis/QA.
 
 ## Poda
 

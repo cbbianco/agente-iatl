@@ -50,8 +50,8 @@ Si falta ticket o diff, **detente** y solicita a @iatl.
 3. Task review-bugbot (readonly) — mismo diff, en paralelo si es posible
 4. Esperar ambos informes
 5. Consolidar PaqueteReview → @iatl (incluir rutas de ambos .md)
-6. @iatl entrega PaqueteReview + 2 .md → @pfi-tl-peer-daniel (gate arquitectura)
-7. Daniel: extiende / knowledge_sources / Mongo → informe → @iatl
+6. @iatl entrega PaqueteReview + 2 .md → @pfi-tl-peer-daniel-analisis (modo B — gate arquitectura)
+7. Daniel análisis: extiende / knowledge_sources / Mongo → informe → @iatl
 8. Persistir en Mongo: review_meta + session_id
 ```
 
@@ -72,9 +72,9 @@ Si falta ticket o diff, **detente** y solicita a @iatl.
 ## @pfi-cr-analyst
 [Informe completo del analista — incluye veredicto preliminar]
 
-## Gate @pfi-tl-peer-daniel (pendiente / completado)
+## Gate @pfi-tl-peer-daniel-analisis modo B (pendiente / completado)
 - Entrada: ambos .md + este paquete
-- Salida: informe Daniel → @iatl (extensión, knowledge_sources, veredicto arquitectura)
+- Salida: informe Daniel análisis → @iatl (extensión, knowledge_sources, veredicto arquitectura)
 
 ## Bugbot
 [Hallazgos crudos]

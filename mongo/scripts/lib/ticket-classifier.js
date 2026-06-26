@@ -138,7 +138,10 @@ export function classifyWithProfile(issue) {
 
 function buildAgentList(profile) {
   const agents = ["@iatl"];
-  if (profile.peerDebate) agents.push("@pfi-tl-peer-daniel");
+  if (profile.peerDebate) agents.push("@pfi-tl-peer-daniel-analisis");
+  if (profile.peerDebate && profile.path !== "fast" && profile.path !== "light") {
+    agents.push("@pfi-tl-peer-daniel-implementacion");
+  }
   if (profile.patternsAdvisor) agents.push("@pfi-patterns-advisor");
   if (profile.crAnalystDepth !== "none") {
     agents.push("@pfi-review-orchestrator", "@pfi-cr-analyst", "Bugbot");

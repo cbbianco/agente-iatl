@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "description": "Fuentes canónicas del agente par TL. Seed → Mongo knowledge_sources.",
+  "sources": [
+    {
+      "id": "refactoring-guru-catalog",
+      "category": "design-patterns",
+      "name": "Refactoring.Guru — Catálogo Design Patterns",
+      "url": "https://refactoring.guru/design-patterns",
+      "tags": ["gof", "strategy", "command", "behavioral", "structural"],
+      "enabled": true,
+      "priority": 1
+    },
+    {
+      "id": "nodejs-guides",
+      "category": "nodejs",
+      "name": "Node.js — Official Guides",
+      "url": "https://nodejs.org/en/docs/guides/",
+      "tags": ["async", "modules", "errors", "performance"],
+      "enabled": true,
+      "priority": 1
+    },
+    {
+      "id": "microsoft-rest-api-design",
+      "category": "rest-api",
+      "name": "Microsoft — REST API Design Best Practices",
+      "url": "https://learn.microsoft.com/en-us/azure/architecture/best-practices/api-design",
+      "tags": ["http", "resources", "status-codes", "versioning", "pagination"],
+      "enabled": true,
+      "priority": 1
+    },
+    {
+      "id": "aws-lambda-best-practices",
+      "category": "aws",
+      "name": "AWS Lambda — Best Practices",
+      "url": "https://docs.aws.amazon.com/lambda/latest/dg/best-practices.html",
+      "tags": ["lambda", "cold-start", "concurrency", "observability", "iam"],
+      "enabled": true,
+      "priority": 1
+    }
+  ]
+}

@@ -9,7 +9,10 @@
  * {
  *   "verdict": "closed_implementation",
  *   "summary": "...",
- *   "learnings": ["bullet1", "bullet2"],
+ *   "learnings": [
+ *     "bullet1",
+ *     { "text": "bullet2", "trace": { "howWeGotHere": ["..."], "actualFinding": "...", "operationalRule": "..." } }
+ *   ],
  *   "branches": [
  *     { "branch": "pfi-1238/feature/...", "role": "feature", "base": "develop", "lastCommit": "eaee6a8c" }
  *   ],
@@ -19,6 +22,11 @@
 import { readFileSync } from "node:fs";
 import { getDb, closeDb } from "./lib/mongo.js";
 import { loadConfig, retentionExpiresAt } from "./lib/config.js";
+import {
+  normalizeLearningsList,
+  pickResumeTrace,
+  buildResumeContext,
+} from "./lib/learning-trace.js";
 
 function parseArgs(argv) {
   const out = {};
@@ -59,6 +67,10 @@ async function main() {
 
   const db = await getDb();
 
+  const normalizedLearnings = normalizeLearningsList(payload.learnings ?? []);
+  const resumeTrace = pickResumeTrace(normalizedLearnings);
+  const resumeContext = buildResumeContext(resumeTrace, ticket);
+
   const closureDoc = {
     ticket,
     project: config.project,
@@ -68,7 +80,10 @@ async function main() {
     summary: payload.summary ?? "",
     endpoints: payload.endpoints ?? [],
     branches: payload.branches ?? [],
-    learnings: payload.learnings ?? [],
+    learnings: normalizedLearnings.map((l) =>
+      l.trace ? { text: l.text, trace: l.trace } : l.text,
+    ),
+    resumeContext,
     closedAt,
     expiresAt,
     hitlSource: "user",
@@ -82,14 +97,24 @@ async function main() {
     { upsert: true },
   );
 
-  const learnings = (payload.learnings ?? []).slice(0, 5);
-  for (const text of learnings) {
+  await db.collection("learnings").updateMany(
+    { ticket, project: config.project, source: "hitl-close", category: "ticket-closure" },
+    { $set: { status: "archived", updatedAt: closedAt } },
+  );
+
+  const learnings = normalizedLearnings.slice(0, 5);
+  for (let i = 0; i < learnings.length; i++) {
+    const { text, trace } = learnings[i];
+    const isResumeTrace = Boolean(resumeTrace && i === resumeTrace.index);
     await db.collection("learnings").insertOne({
       ticket,
       project: config.project,
       sprintLabel: config.sprintLabel,
       category: "ticket-closure",
       text,
+      trace: trace ?? null,
+      hasTrace: Boolean(trace),
+      isResumeTrace,
       status: "active",
       source: "hitl-close",
       expiresAt,
@@ -129,6 +154,7 @@ async function main() {
         sprintLabel: config.sprintLabel,
         expiresAt: expiresAt.toISOString(),
         learningsStored: learnings.length,
+        resumeTraceStored: Boolean(resumeContext),
         branchesUpdated: (payload.branches ?? []).length,
       },
       null,
