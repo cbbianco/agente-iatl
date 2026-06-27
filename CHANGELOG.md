@@ -5,6 +5,22 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.10.0] — 2026-06-27
+
+**Tema:** Skills CR + overview Daniel split en diagrama.
+
+### Añadido
+
+- **`skills/pfi-pr-code-review.md`** — espejo skill review PR
+- **`skills/pfi-spec-driven-code-review.md`** — espejo gate post spec-driven
+- **`skills/pfi-git-branch-format.md`** — espejo convención ramas PFI
+
+### Cambiado
+
+- **`architecture/overview.md`** — tabla y diagrama mermaid: Daniel análisis/implementación + CR analyst + patterns advisor
+
+---
+
 ## [0.9.0] — 2026-06-26
 
 **Tema:** Learning trace en cierre HITL + sync operativa sprint S12.

@@ -11,8 +11,11 @@ Tres capas de inteligencia cooperativa + hub Mongo:
 | Capa | Agente / artefacto | Perfil |
 |------|-------------------|--------|
 | Orquestación + HITL | @iatl | César — hexagonal estricto, spec-driven |
-| Gate pre-HITL | @pfi-tl-peer-daniel | Daniel TL — pragmático, diff mínimo |
-| Gate post-código | @pfi-review-orchestrator | CR Claude + Bugbot |
+| Gate pre-HITL análisis | @pfi-tl-peer-daniel-analisis | Daniel TL — diseño/spec + post CR |
+| Gate pre-HITL implementación | @pfi-tl-peer-daniel-implementacion | Daniel TL — plan + check código |
+| Gate post-código | @pfi-review-orchestrator | CR analyst + Bugbot |
+| Análisis CR | @pfi-cr-analyst | Veredicto patterns/SOLID |
+| Patrones (foco explícito) | @pfi-patterns-advisor | GoF real vs cosmético |
 | Memoria sprint | Hub Mongo + `close-ticket.js` | Cierres HITL con retención parametrizable |
 | Fuentes issue | `pfi-ticket-source-resolver` | MCP-first Jira/… por número de historia |
 | Recall semántico | Chroma local v2.0 | Similitud learnings/CR — ver knowledge-layer-chroma.md |
@@ -39,7 +42,8 @@ flowchart TB
   end
 
   subgraph Gates["Gates especializados"]
-    TL[@pfi-tl-peer-daniel<br/>pre-HITL]
+    TL_A[@pfi-tl-peer-daniel-analisis<br/>pre-HITL análisis]
+    TL_I[@pfi-tl-peer-daniel-implementacion<br/>pre-HITL impl]
     RO[@pfi-review-orchestrator<br/>post-código]
     CR[@pfi-cr-analyst]
     BB[Bugbot]
@@ -60,14 +64,16 @@ flowchart TB
   end
 
   U <-->|debate / OK HITL| IATL
-  IATL --> TL
+  IATL --> TL_A
+  IATL --> TL_I
   IATL --> RO
   RO --> CR
   RO --> BB
   IATL -.->|foco patrones| PA
 
   IATL --> Mongo
-  TL --> Mongo
+  TL_A --> Mongo
+  TL_I --> Mongo
   CR --> Mongo
   RO --> Mongo
 
