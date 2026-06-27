@@ -17,6 +17,7 @@
 import { readFileSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { getDb, closeDb } from "./lib/mongo.js";
+import { loadConfig } from "./lib/config.js";
 
 function parseArgs(argv) {
   const out = { _: [] };
@@ -51,8 +52,10 @@ async function main() {
   }
 
   const db = await getDb();
+  const config = loadConfig();
+  const project = args.project ?? config.project ?? "pfi-backend-core";
   const ticket = args.ticket ?? "GENERAL";
-  const doc = { ticket, createdAt: now(), updatedAt: now() };
+  const doc = { ticket, project, createdAt: now(), updatedAt: now() };
 
   switch (type) {
     case "learning": {
@@ -114,6 +117,7 @@ async function main() {
       const status = args.status ?? "active";
       const activeFilter = {
         ticket,
+        project,
         status: { $in: ["active", "active_spec_driven", "open"] },
       };
       const existing = await db.collection("sessions").findOne(activeFilter, {
@@ -162,6 +166,7 @@ async function main() {
       const checkpoint = { phase, summary, at: now() };
       const activeFilter = {
         ticket,
+        project,
         status: { $in: ["active", "active_spec_driven", "open"] },
       };
       const existing = await db.collection("sessions").findOne(activeFilter, {
@@ -197,6 +202,7 @@ async function main() {
       }
       const payload = {
         sourceId,
+        project,
         category: args.category ?? "general",
         name: args.name ?? sourceId,
         url: args.url ?? "",
@@ -206,7 +212,7 @@ async function main() {
         updatedAt: now(),
       };
       await db.collection("knowledge_sources").updateOne(
-        { sourceId },
+        { sourceId, project },
         { $set: payload, $setOnInsert: { createdAt: now() } },
         { upsert: true },
       );
@@ -241,10 +247,11 @@ async function main() {
         process.exit(1);
       }
       await db.collection("working_branches").updateOne(
-        { branch },
+        { branch, project },
         {
           $set: {
             ticket,
+            project,
             branch,
             base: args.base ?? "",
             role: args.role ?? "feature",
@@ -325,6 +332,7 @@ async function main() {
         metadata: {
           docType: args["doc-type"] ?? "note",
           ticket,
+          project,
           category: args.category ?? "general",
           sourceId: args["source-id"] ?? "",
           agent: args.agent ?? "iatl",

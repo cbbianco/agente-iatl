@@ -126,10 +126,11 @@ async function main() {
   for (const b of payload.branches ?? []) {
     if (!b.branch) continue;
     await db.collection("working_branches").updateOne(
-      { branch: b.branch },
+      { branch: b.branch, project: config.project },
       {
         $set: {
           ticket,
+          project: config.project,
           branch: b.branch,
           base: b.base ?? "",
           role: b.role ?? "feature",

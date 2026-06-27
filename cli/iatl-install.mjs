@@ -87,9 +87,18 @@ async function main() {
     legacyMonolithPath: args.legacyMonolithPath ?? "",
     legacyApiBaseDev: args.legacyApiBaseDev ?? "",
   };
-  let projectRoot = args.projectRoot ?? defaultProjectRoot();
-
-  if (!args.nonInteractive) {
+  let projectRoot = args.projectRoot ?? "";
+  
+  if (args.nonInteractive) {
+    if (!projectRoot) {
+      throw new Error("❌ Error: --project-root es requerido en modo no interactivo.");
+    }
+    if (!config.project) {
+      throw new Error("❌ Error: --project es requerido en modo no interactivo.");
+    }
+    runtime = runtime ?? "cursor";
+    if (runtime === "vscode" && claudeCode) runtime = "vscode-claude";
+  } else {
     const rl = createInterface({ input, output });
 
     console.log("--- ¿Dónde vas a correr IATL? ---\n");
@@ -105,7 +114,16 @@ async function main() {
     }
 
     console.log("\n--- Configuración del proyecto ---\n");
-    config.project = await ask(rl, "Proyecto (repo/slug)", config.project);
+    
+    let proj = config.project ?? "";
+    while (!proj) {
+      proj = await ask(rl, "Proyecto (repo/slug)", "pfi-backend-core");
+      if (!proj) {
+        console.log("❌ El proyecto (slug) es obligatorio.");
+      }
+    }
+    config.project = proj;
+
     config.projectContext = await ask(rl, "Contexto del proyecto (1 línea)", config.projectContext);
     config.sprintLabel = await ask(rl, "Sprint activo (ej. 2026-S12)", config.sprintLabel);
     config.architectureTarget = await ask(
@@ -126,12 +144,19 @@ async function main() {
       "API legacy DEV base URL (opcional)",
       config.legacyApiBaseDev,
     );
-    projectRoot = await ask(rl, "Ruta checkout pfi-backend-core", projectRoot);
+
+    let guessRoot = defaultProjectRoot();
+    while (!projectRoot) {
+      projectRoot = await ask(rl, "Ruta checkout de código (projectRoot)", guessRoot);
+      if (!projectRoot) {
+        console.log("❌ El projectRoot es obligatorio.");
+      } else if (!existsSync(projectRoot)) {
+        console.log(`⚠️ La ruta '${projectRoot}' no existe. Por favor ingresa una ruta válida.`);
+        projectRoot = "";
+      }
+    }
 
     await rl.close();
-  } else {
-    runtime = runtime ?? "cursor";
-    if (runtime === "vscode" && claudeCode) runtime = "vscode-claude";
   }
 
   console.log(`\n→ Instalando para runtime: ${runtime}\n`);
@@ -147,6 +172,8 @@ async function main() {
       "--non-interactive",
       "--project",
       config.project,
+      "--project-root",
+      projectRoot,
       "--context",
       config.projectContext,
       "--sprint",

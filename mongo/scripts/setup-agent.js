@@ -17,6 +17,7 @@ import { stdin as input, stdout as output } from "node:process";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { existsSync } from "node:fs";
 import { detectIde, ideLabel } from "./lib/ide-detect.js";
 import { loadConfig, saveConfig } from "./lib/config.js";
 
@@ -28,6 +29,7 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === "--non-interactive") out.nonInteractive = true;
     else if (a === "--project" && argv[i + 1]) out.project = argv[++i];
+    else if (a === "--project-root" && argv[i + 1]) out.projectRoot = argv[++i];
     else if (a === "--context" && argv[i + 1]) out.projectContext = argv[++i];
     else if (a === "--sprint" && argv[i + 1]) out.sprintLabel = argv[++i];
     else if (a === "--architecture" && argv[i + 1]) out.architectureTarget = argv[++i];
@@ -68,11 +70,16 @@ async function main() {
   let config = { ...current };
 
   if (args.nonInteractive) {
+    const projRoot = args.projectRoot ?? config.projectRoot;
+    if (!projRoot) {
+      throw new Error("❌ Error: El projectRoot es requerido para la instalación.");
+    }
     config = {
       ...config,
       ide: detectedIde,
       runtimeTarget: detectedIde,
       project: args.project ?? config.project ?? "pfi-backend-core",
+      projectRoot: projRoot,
       projectContext:
         args.projectContext ??
         config.projectContext ??
@@ -91,7 +98,28 @@ async function main() {
 
     config.ide = detectedIde;
     config.runtimeTarget = detectedIde;
-    config.project = await ask(rl, "Proyecto (repo/slug)", current.project ?? "pfi-backend-core");
+    
+    let proj = args.project ?? current.project ?? "";
+    while (!proj) {
+      proj = await ask(rl, "Proyecto (repo/slug)", "pfi-backend-core");
+      if (!proj) {
+        console.log("❌ El proyecto (slug) es obligatorio.");
+      }
+    }
+    config.project = proj;
+
+    let root = args.projectRoot ?? current.projectRoot ?? "";
+    while (!root) {
+      root = await ask(rl, "Ruta checkout del proyecto (projectRoot)", "");
+      if (!root) {
+        console.log("❌ El projectRoot es obligatorio.");
+      } else if (!existsSync(root)) {
+        console.log(`⚠️ La ruta '${root}' no existe. Por favor ingresa una ruta válida.`);
+        root = "";
+      }
+    }
+    config.projectRoot = root;
+
     config.projectContext = await ask(
       rl,
       "Contexto del proyecto (1 línea)",

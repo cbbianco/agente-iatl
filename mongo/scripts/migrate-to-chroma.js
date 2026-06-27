@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { getDb, closeDb } from "./lib/mongo.js";
 import { upsertDocument, chromaHealth } from "./lib/chroma.js";
+import { loadConfig } from "./lib/config.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_SEED = join(__dirname, "../skills/pfi-tl-peer-daniel-analisis/knowledge-sources.seed.json");
@@ -24,11 +25,12 @@ function docFromKnowledgeSource(src) {
   return lines.join("\n");
 }
 
-async function migrateCollection(db, collectionName, mapFn, label) {
-  const rows = await db.collection(collectionName).find({}).limit(5000).toArray();
+async function migrateCollection(db, collectionName, mapFn, label, config) {
+  const project = config.project ?? "pfi-backend-core";
+  const rows = await db.collection(collectionName).find({ project }).limit(5000).toArray();
   let count = 0;
   for (const row of rows) {
-    const mapped = mapFn(row);
+    const mapped = mapFn(row, project);
     if (!mapped) continue;
     await upsertDocument(mapped);
     count++;
@@ -37,7 +39,8 @@ async function migrateCollection(db, collectionName, mapFn, label) {
   return count;
 }
 
-async function migrateSeedJson() {
+async function migrateSeedJson(config) {
+  const project = config.project ?? "pfi-backend-core";
   let count = 0;
   try {
     const seed = JSON.parse(readFileSync(DEFAULT_SEED, "utf8"));
@@ -51,6 +54,7 @@ async function migrateSeedJson() {
           category: src.category ?? "general",
           agent: "seed",
           ticket: "GENERAL",
+          project,
         },
       });
       count++;
@@ -70,17 +74,18 @@ async function main() {
     process.exit(1);
   }
 
+  const config = loadConfig();
   console.log(`Chroma OK — colección ${health.collection} (${health.count} docs previos)\n`);
 
   const db = await getDb();
   let total = 0;
 
-  total += await migrateSeedJson();
+  total += await migrateSeedJson(config);
 
   total += await migrateCollection(
     db,
     "knowledge_sources",
-    (row) => ({
+    (row, project) => ({
       id: `knowledge_source:${row.sourceId}`,
       text: docFromKnowledgeSource(row),
       metadata: {
@@ -89,15 +94,17 @@ async function main() {
         category: row.category ?? "general",
         agent: "mongo-migrate",
         ticket: "GENERAL",
+        project,
       },
     }),
     "knowledge_sources (Mongo)",
+    config,
   );
 
   total += await migrateCollection(
     db,
     "learnings",
-    (row) => {
+    (row, project) => {
       if (!row.text) return null;
       return {
         id: `learning:${row._id}`,
@@ -109,16 +116,18 @@ async function main() {
           source: row.source ?? "iatl",
           status: row.status ?? "active",
           agent: row.source ?? "iatl",
+          project,
         },
       };
     },
     "learnings",
+    config,
   );
 
   total += await migrateCollection(
     db,
     "peer_discussions",
-    (row) => {
+    (row, project) => {
       const parts = [
         row.propuestaSummary,
         ...(row.findings ?? []).map((f) => (typeof f === "string" ? f : f.summary ?? JSON.stringify(f))),
@@ -134,16 +143,18 @@ async function main() {
           ticket: row.ticket ?? "GENERAL",
           verdict: row.verdict ?? "",
           agent: "pfi-tl-peer-daniel",
+          project,
         },
       };
     },
     "peer_discussions",
+    config,
   );
 
   total += await migrateCollection(
     db,
     "review_findings",
-    (row) => {
+    (row, project) => {
       if (!row.summary) return null;
       return {
         id: `review_finding:${row._id}`,
@@ -154,16 +165,18 @@ async function main() {
           severity: row.severity ?? "medium",
           source: row.source ?? "pfi-cr-analyst",
           agent: row.source ?? "pfi-cr-analyst",
+          project,
         },
       };
     },
     "review_findings",
+    config,
   );
 
   total += await migrateCollection(
     db,
     "pattern_evals",
-    (row) => {
+    (row, project) => {
       const text = `Componente ${row.component}: declarado ${row.declared}, real ${row.real}. Fuentes: ${(row.sources ?? []).join(", ")}`;
       return {
         id: `pattern_eval:${row._id}`,
@@ -173,10 +186,12 @@ async function main() {
           ticket: row.ticket ?? "GENERAL",
           component: row.component ?? "",
           agent: "pfi-patterns-advisor",
+          project,
         },
       };
     },
     "pattern_evals",
+    config,
   );
 
   await closeDb();

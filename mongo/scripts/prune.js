@@ -7,6 +7,7 @@
  *   node prune.js --archive-days 7 --dry-run
  */
 import { getDb, closeDb } from "./lib/mongo.js";
+import { loadConfig } from "./lib/config.js";
 
 function parseArgs(argv) {
   const out = {};
@@ -33,12 +34,15 @@ async function main() {
   const dryRun = Boolean(args["dry-run"]);
   const cutoff = new Date(Date.now() - archiveDays * 24 * 60 * 60 * 1000);
 
+  const config = loadConfig();
+  const project = args.project ?? config.project ?? "pfi-backend-core";
+
   const db = await getDb();
   const learnings = db.collection("learnings");
   const archive = db.collection("learnings_archive");
 
   const active = await learnings
-    .find({ status: "active" })
+    .find({ status: "active", project })
     .sort({ createdAt: -1 })
     .toArray();
 
@@ -62,7 +66,7 @@ async function main() {
 
   const oldFindings = await db
     .collection("review_findings")
-    .find({ status: "open", createdAt: { $lt: cutoff } })
+    .find({ status: "open", project, createdAt: { $lt: cutoff } })
     .toArray();
 
   if (oldFindings.length > 0) {
@@ -73,7 +77,7 @@ async function main() {
   }
 
   const sprintExpired = await learnings
-    .find({ expiresAt: { $lt: new Date() }, status: "active" })
+    .find({ expiresAt: { $lt: new Date() }, status: "active", project })
     .toArray();
 
   if (!dryRun && sprintExpired.length > 0) {
@@ -88,7 +92,7 @@ async function main() {
 
   const expiredClosures = await db
     .collection("ticket_closures")
-    .find({ expiresAt: { $lt: new Date() } })
+    .find({ expiresAt: { $lt: new Date() }, project })
     .toArray();
 
   if (!dryRun && expiredClosures.length > 0) {

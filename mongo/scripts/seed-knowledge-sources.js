@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { getDb, closeDb } from "./lib/mongo.js";
+import { loadConfig } from "./lib/config.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_SEED = join(
@@ -30,15 +31,18 @@ async function main() {
   const seedPath = args.file ?? DEFAULT_SEED;
   const seed = JSON.parse(readFileSync(seedPath, "utf8"));
   const db = await getDb();
+  const config = loadConfig();
+  const project = config.project ?? "pfi-backend-core";
   const now = new Date();
   let upserted = 0;
 
   for (const src of seed.sources ?? []) {
     await db.collection("knowledge_sources").updateOne(
-      { sourceId: src.id },
+      { sourceId: src.id, project },
       {
         $set: {
           sourceId: src.id,
+          project,
           category: src.category,
           name: src.name,
           url: src.url,

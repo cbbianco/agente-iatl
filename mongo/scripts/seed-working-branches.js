@@ -1,9 +1,6 @@
 #!/usr/bin/env node
-/**
- * Seed inicial de ramas de trabajo (sesión IATL).
- * Uso: node seed-working-branches.js
- */
 import { getDb, closeDb } from "./lib/mongo.js";
+import { loadConfig } from "./lib/config.js";
 
 const branches = [
   {
@@ -116,10 +113,13 @@ const now = () => new Date();
 
 async function main() {
   const db = await getDb();
+  const config = loadConfig();
+  const project = config.project ?? "pfi-backend-core";
+
   for (const row of branches) {
     await db.collection("working_branches").updateOne(
-      { branch: row.branch },
-      { $set: { ...row, updatedAt: now() }, $setOnInsert: { createdAt: now() } },
+      { branch: row.branch, project },
+      { $set: { ...row, project, updatedAt: now() }, $setOnInsert: { createdAt: now() } },
       { upsert: true },
     );
   }

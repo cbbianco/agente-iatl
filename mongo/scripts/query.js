@@ -46,9 +46,15 @@ async function main() {
       await closeDb();
       return;
     }
+    const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
+    const where = { project };
+    if (args.category) {
+      where.category = args.category;
+    }
     const rows = await semanticSearch(args["semantic-search"], {
       limit: Number(args.limit ?? 8),
-      where: args.category ? { category: args.category } : undefined,
+      where,
     });
     console.log(JSON.stringify({ query: args["semantic-search"], semantic_results: rows }, null, 2));
     await closeDb();
@@ -123,9 +129,11 @@ async function main() {
   }
 
   if (args["active-learnings"]) {
+    const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
     const rows = await db
       .collection("learnings")
-      .find({ status: "active" })
+      .find({ status: "active", project })
       .sort({ createdAt: -1 })
       .limit(limit)
       .toArray();
@@ -143,18 +151,20 @@ async function main() {
 
   if (args["ticket-closure"] && args.ticket) {
     const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
     const closure = await db.collection("ticket_closures").findOne({
       ticket: args.ticket,
-      project: config.project,
+      project,
     });
     const learnings = await db
       .collection("learnings")
-      .find({ ticket: args.ticket, category: "ticket-closure", status: "active" })
+      .find({ ticket: args.ticket, project, category: "ticket-closure", status: "active" })
       .sort({ createdAt: -1 })
       .limit(10)
       .toArray();
     const resumeLearning = await db.collection("learnings").findOne({
       ticket: args.ticket,
+      project,
       isResumeTrace: true,
       status: "active",
     });
@@ -175,52 +185,54 @@ async function main() {
 
   if (args.ticket) {
     const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
     const [findings, patterns, learnings, meta, activeSession, classification, workingBranches, closure] =
       await Promise.all([
       db
         .collection("review_findings")
-        .find({ ticket: args.ticket, status: { $ne: "archived" } })
+        .find({ ticket: args.ticket, project, status: { $ne: "archived" } })
         .sort({ createdAt: -1 })
         .limit(limit)
         .toArray(),
       db
         .collection("pattern_evals")
-        .find({ ticket: args.ticket })
+        .find({ ticket: args.ticket, project })
         .sort({ createdAt: -1 })
         .limit(limit)
         .toArray(),
       db
         .collection("learnings")
-        .find({ ticket: args.ticket, status: "active" })
+        .find({ ticket: args.ticket, project, status: "active" })
         .sort({ createdAt: -1 })
         .limit(limit)
         .toArray(),
       db
         .collection("review_meta")
-        .find({ ticket: args.ticket })
+        .find({ ticket: args.ticket, project })
         .sort({ createdAt: -1 })
         .limit(5)
         .toArray(),
       db.collection("sessions").findOne(
-        { ticket: args.ticket, status: { $in: ["active", "active_spec_driven", "open"] } },
+        { ticket: args.ticket, project, status: { $in: ["active", "active_spec_driven", "open"] } },
         { sort: { updatedAt: -1 } },
       ),
       db.collection("ticket_classifications").findOne(
-        { ticket: args.ticket },
+        { ticket: args.ticket, project },
         { sort: { createdAt: -1 } },
       ),
       db
         .collection("working_branches")
-        .find({ ticket: args.ticket, status: "active" })
+        .find({ ticket: args.ticket, project, status: "active" })
         .sort({ updatedAt: -1 })
         .toArray(),
       db.collection("ticket_closures").findOne({
         ticket: args.ticket,
-        project: config.project,
+        project,
       }),
     ]);
     const resumeLearning = await db.collection("learnings").findOne({
       ticket: args.ticket,
+      project,
       isResumeTrace: true,
       status: "active",
     });
@@ -261,9 +273,11 @@ async function main() {
   }
 
   if (args.tag) {
+    const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
     const patterns = await db
       .collection("pattern_evals")
-      .find({ tags: args.tag })
+      .find({ tags: args.tag, project })
       .sort({ createdAt: -1 })
       .limit(limit)
       .toArray();
@@ -280,7 +294,9 @@ async function main() {
   }
 
   if (args["knowledge-sources"]) {
-    const filter = { enabled: true };
+    const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
+    const filter = { enabled: true, project };
     if (args.category) filter.category = args.category;
     const rows = await db
       .collection("knowledge_sources")
@@ -294,7 +310,9 @@ async function main() {
   }
 
   if (args["peer-discussions"]) {
-    const filter = {};
+    const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
+    const filter = { project };
     if (args.ticket) filter.ticket = args.ticket;
     const rows = await db
       .collection("peer_discussions")
@@ -308,7 +326,9 @@ async function main() {
   }
 
   if (args["working-branches"]) {
-    const filter = {};
+    const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
+    const filter = { project };
     if (args.ticket) filter.ticket = args.ticket;
     if (args.status) filter.status = args.status;
     const rows = await db

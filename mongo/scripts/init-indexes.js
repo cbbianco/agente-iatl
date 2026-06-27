@@ -5,57 +5,84 @@
  */
 import { getDb, closeDb } from "./lib/mongo.js";
 
+async function safeDropIndex(collection, indexName) {
+  try {
+    await collection.dropIndex(indexName);
+  } catch (err) {
+    // Ignorar si no existe
+  }
+}
+
 async function main() {
   const db = await getDb();
 
-  await db.collection("sessions").createIndex({ ticket: 1, createdAt: -1 });
-  await db.collection("sessions").createIndex({ ticket: 1, status: 1, updatedAt: -1 });
-  await db.collection("sessions").createIndex({ sessionId: 1 }, { unique: true });
+  const sessions = db.collection("sessions");
+  const reviewFindings = db.collection("review_findings");
+  const patternEvals = db.collection("pattern_evals");
+  const learnings = db.collection("learnings");
+  const reviewMeta = db.collection("review_meta");
+  const sourcesCache = db.collection("sources_cache");
+  const knowledgeSources = db.collection("knowledge_sources");
+  const peerDiscussions = db.collection("peer_discussions");
+  const workingBranches = db.collection("working_branches");
+  const ticketClosures = db.collection("ticket_closures");
+  const projectConfig = db.collection("project_config");
+  const ticketClassifications = db.collection("ticket_classifications");
+  const ticketMetrics = db.collection("ticket_metrics");
 
-  await db.collection("review_findings").createIndex({ ticket: 1, createdAt: -1 });
-  await db.collection("review_findings").createIndex({ severity: 1 });
-  await db.collection("review_findings").createIndex({ status: 1 });
+  // Eliminar índices antiguos únicos de campo simple que ahora son compuestos por proyecto
+  await safeDropIndex(sourcesCache, "sourceId_1");
+  await safeDropIndex(knowledgeSources, "sourceId_1");
+  await safeDropIndex(workingBranches, "branch_1");
 
-  await db.collection("pattern_evals").createIndex({ ticket: 1, createdAt: -1 });
-  await db.collection("pattern_evals").createIndex({ component: 1 });
-  await db.collection("pattern_evals").createIndex({ tags: 1 });
+  // Crear índices compuestos y específicos
+  await sessions.createIndex({ ticket: 1, project: 1, createdAt: -1 });
+  await sessions.createIndex({ ticket: 1, project: 1, status: 1, updatedAt: -1 });
+  await sessions.createIndex({ sessionId: 1 }, { unique: true });
 
-  await db.collection("learnings").createIndex({ ticket: 1, isResumeTrace: 1, status: 1 });
-  await db.collection("learnings").createIndex({ status: 1, createdAt: -1 });
-  await db.collection("learnings").createIndex({ category: 1 });
+  await reviewFindings.createIndex({ ticket: 1, project: 1, createdAt: -1 });
+  await reviewFindings.createIndex({ severity: 1 });
+  await reviewFindings.createIndex({ status: 1 });
 
-  await db.collection("review_meta").createIndex({ ticket: 1, createdAt: -1 });
+  await patternEvals.createIndex({ ticket: 1, project: 1, createdAt: -1 });
+  await patternEvals.createIndex({ component: 1 });
+  await patternEvals.createIndex({ tags: 1 });
 
-  await db.collection("sources_cache").createIndex({ sourceId: 1 }, { unique: true });
-  await db.collection("sources_cache").createIndex({ fetchedAt: 1 });
+  await learnings.createIndex({ ticket: 1, project: 1, isResumeTrace: 1, status: 1 });
+  await learnings.createIndex({ status: 1, createdAt: -1 });
+  await learnings.createIndex({ category: 1 });
+  await learnings.createIndex({ expiresAt: 1 });
 
-  await db.collection("knowledge_sources").createIndex({ sourceId: 1 }, { unique: true });
-  await db.collection("knowledge_sources").createIndex({ category: 1, priority: 1 });
-  await db.collection("knowledge_sources").createIndex({ enabled: 1, category: 1 });
-  await db.collection("knowledge_sources").createIndex({ tags: 1 });
+  await reviewMeta.createIndex({ ticket: 1, project: 1, createdAt: -1 });
 
-  await db.collection("peer_discussions").createIndex({ ticket: 1, createdAt: -1 });
-  await db.collection("peer_discussions").createIndex({ verdict: 1 });
-  await db.collection("peer_discussions").createIndex({ source: 1 });
+  await sourcesCache.createIndex({ sourceId: 1, project: 1 }, { unique: true });
+  await sourcesCache.createIndex({ fetchedAt: 1 });
 
-  await db.collection("working_branches").createIndex({ branch: 1 }, { unique: true });
-  await db.collection("working_branches").createIndex({ ticket: 1, updatedAt: -1 });
-  await db.collection("working_branches").createIndex({ status: 1, updatedAt: -1 });
+  await knowledgeSources.createIndex({ sourceId: 1, project: 1 }, { unique: true });
+  await knowledgeSources.createIndex({ category: 1, priority: 1 });
+  await knowledgeSources.createIndex({ enabled: 1, category: 1 });
+  await knowledgeSources.createIndex({ tags: 1 });
 
-  await db.collection("ticket_closures").createIndex({ ticket: 1, project: 1 }, { unique: true });
-  await db.collection("ticket_closures").createIndex({ project: 1, closedAt: -1 });
-  await db.collection("ticket_closures").createIndex({ expiresAt: 1 });
+  await peerDiscussions.createIndex({ ticket: 1, project: 1, createdAt: -1 });
+  await peerDiscussions.createIndex({ verdict: 1 });
+  await peerDiscussions.createIndex({ source: 1 });
 
-  await db.collection("learnings").createIndex({ expiresAt: 1 });
+  await workingBranches.createIndex({ branch: 1, project: 1 }, { unique: true });
+  await workingBranches.createIndex({ ticket: 1, project: 1, updatedAt: -1 });
+  await workingBranches.createIndex({ status: 1, updatedAt: -1 });
 
-  await db.collection("project_config").createIndex({ project: 1 }, { unique: true });
+  await ticketClosures.createIndex({ ticket: 1, project: 1 }, { unique: true });
+  await ticketClosures.createIndex({ project: 1, closedAt: -1 });
+  await ticketClosures.createIndex({ expiresAt: 1 });
 
-  await db.collection("ticket_classifications").createIndex({ ticket: 1, createdAt: -1 });
-  await db.collection("ticket_classifications").createIndex({ classification: 1 });
+  await projectConfig.createIndex({ project: 1 }, { unique: true });
 
-  await db.collection("ticket_metrics").createIndex({ ticket: 1, createdAt: -1 });
-  await db.collection("ticket_metrics").createIndex({ project: 1, closedAt: -1 });
-  await db.collection("ticket_metrics").createIndex({ classification: 1, analysisPath: 1 });
+  await ticketClassifications.createIndex({ ticket: 1, project: 1, createdAt: -1 });
+  await ticketClassifications.createIndex({ classification: 1 });
+
+  await ticketMetrics.createIndex({ ticket: 1, project: 1, createdAt: -1 });
+  await ticketMetrics.createIndex({ project: 1, closedAt: -1 });
+  await ticketMetrics.createIndex({ classification: 1, analysisPath: 1 });
 
   console.log("✅ Índices creados en iatl_knowledge");
   await closeDb();
