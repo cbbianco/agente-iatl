@@ -11,7 +11,8 @@
   "scripts": {
     "install:iatl": "node cli/iatl-install.mjs",
     "install:iatl:quick": "node cli/iatl-install.mjs --non-interactive --runtime cursor",
-    "uninstall:iatl": "node cli/iatl-uninstall.mjs"
+    "uninstall:iatl": "node cli/iatl-uninstall.mjs",
+    "chroma:control": "node cli/chroma-control.mjs"
   },
   "engines": {
     "node": ">=18"

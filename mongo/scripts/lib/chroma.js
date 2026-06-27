@@ -93,10 +93,10 @@ async function ensureServer() {
         mkdirSync(persistPath(), { recursive: true });
       }
 
-      // IMPORTANTE: usar 'npx -y' para evitar prompts interactivos
+      // IMPORTANTE: usar 'npx -y' para evitar prompts interactivos, bloqueando versión de compatibilidad
       const child = spawn(
         "npx",
-        ["-y", "chromadb", "run", "--path", persistPath(), "--host", host, "--port", String(port)],
+        ["-y", "chromadb@3.0.14", "run", "--path", persistPath(), "--host", host, "--port", String(port)],
         { detached: true, stdio: "ignore", cwd: ROOT },
       );
       child.unref();

@@ -14,12 +14,104 @@
  */
 import { createInterface } from "node:readline/promises";
 import { stdin as input, stdout as output } from "node:process";
-import { spawnSync } from "node:child_process";
+import { spawnSync, execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { existsSync } from "node:fs";
+import { MongoClient } from "mongodb";
 import { detectIde, ideLabel } from "./lib/ide-detect.js";
 import { loadConfig, saveConfig } from "./lib/config.js";
+
+function isDockerInstalled() {
+  try {
+    execSync("docker --version", { stdio: "ignore" });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function isMongoAlive() {
+  const uri = process.env.IATL_MONGO_URI ?? "mongodb://127.0.0.1:27017";
+  try {
+    const client = new MongoClient(uri, { serverSelectionTimeoutMS: 1500 });
+    await client.connect();
+    await client.close();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveMongoStorage(nonInteractive, rl) {
+  console.log("\n📡 Verificando estado de MongoDB (127.0.0.1:27017)...");
+  if (await isMongoAlive()) {
+    console.log("✅ MongoDB activo en 127.0.0.1:27017.");
+    return false;
+  }
+
+  console.log("⚠️ MongoDB no detectado en el puerto 27017.");
+  const hasDocker = isDockerInstalled();
+
+  if (nonInteractive) {
+    if (hasDocker) {
+      console.log("🐳 Docker detectado. Iniciando contenedor MongoDB automáticamente...");
+      try {
+        execSync("docker run -d -p 27017:27017 --name iatl-mongo-db -v iatl_mongo_data:/data/db mongo:latest", { stdio: "ignore" });
+        console.log("⌛ Esperando 5 segundos a que MongoDB inicie...");
+        await new Promise(r => setTimeout(r, 5000));
+        if (await isMongoAlive()) {
+          console.log("✅ Conexión a MongoDB exitosa.");
+          return false;
+        }
+      } catch (e) {
+        console.log("⚠️ Falló el inicio de MongoDB en Docker:", e.message);
+      }
+    }
+    console.log("📄 Usando fallback automático de base de datos local JSON (local-db.json).");
+    return true;
+  }
+
+  console.log("\nAlternativas:");
+  if (hasDocker) {
+    console.log("  1) Iniciar automáticamente MongoDB usando Docker");
+  } else {
+    console.log("  1) [No disponible - Instala Docker] Iniciar MongoDB usando Docker");
+  }
+  console.log("  2) Utilizar persistencia local liviana basada en archivos JSON (local-db.json)");
+  console.log("  3) Cancelar instalación");
+
+  const option = (await ask(rl, "\nElige una opción [1-3]", "2")).trim();
+
+  if (option === "1") {
+    if (!hasDocker) {
+      console.log("❌ Docker no está instalado en este sistema. Usando base de datos local JSON.");
+      return true;
+    }
+    console.log("🐳 Iniciando MongoDB en Docker...");
+    try {
+      execSync("docker run -d -p 27017:27017 --name iatl-mongo-db -v iatl_mongo_data:/data/db mongo:latest", { stdio: "ignore" });
+      console.log("⌛ Esperando 5 segundos a que inicie el contenedor...");
+      await new Promise(r => setTimeout(r, 5000));
+      if (await isMongoAlive()) {
+        console.log("✅ MongoDB activo en Docker.");
+        return false;
+      } else {
+        console.log("❌ MongoDB no levantó a tiempo. Usando base de datos local JSON.");
+        return true;
+      }
+    } catch (e) {
+      console.log("❌ Falló inicio de Docker:", e.message, "\nUsando base de datos local JSON.");
+      return true;
+    }
+  } else if (option === "3") {
+    console.log("❌ Instalación cancelada.");
+    process.exit(1);
+  } else {
+    console.log("📄 Configurando base de datos local JSON (local-db.json).");
+    return true;
+  }
+}
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)));
 
@@ -94,6 +186,7 @@ async function main() {
       legacyMonolithPath: args.legacyMonolithPath ?? config.legacyMonolithPath ?? "",
       legacyApiBaseDev: args.legacyApiBaseDev ?? config.legacyApiBaseDev ?? "",
     };
+    config.useLocalJsonDb = await resolveMongoStorage(true, null);
   } else {
     const rl = createInterface({ input, output });
 
@@ -152,7 +245,7 @@ async function main() {
     );
     const retention = await ask(rl, "Retención cierres HITL (días)", String(current.retentionDays ?? 14));
     config.retentionDays = Number(retention);
-
+    config.useLocalJsonDb = await resolveMongoStorage(false, rl);
     await rl.close();
   }
 
