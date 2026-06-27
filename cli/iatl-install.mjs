@@ -151,11 +151,16 @@ async function main() {
     } else {
       config.architectureTarget = "";
     }
-    config.architectureCurrent = await ask(
-      rl,
-      "Arquitectura actual del proyecto base (architectureCurrent)",
-      config.architectureCurrent || "layered",
-    );
+    const hasCurrentArch = await askYesNo(rl, "¿Tienes una arquitectura actual del proyecto base?", true);
+    if (hasCurrentArch) {
+      config.architectureCurrent = await ask(
+        rl,
+        "Especifica la arquitectura actual (architectureCurrent)",
+        config.architectureCurrent || "layered",
+      );
+    } else {
+      config.architectureCurrent = "";
+    }
     config.retentionDays = Number(
       await ask(rl, "Retención cierres HITL (días)", String(config.retentionDays)),
     );
