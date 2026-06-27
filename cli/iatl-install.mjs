@@ -77,7 +77,7 @@ async function main() {
   let runtime = args.runtime;
   let claudeCode = args.claudeCode;
   let config = {
-    project: args.project ?? "pfi-backend-core",
+    project: args.project ?? "",
     projectContext:
       args.projectContext ??
       "Backend PFI: lambdas NestJS hexagonales, API Gateway, integración legacy Aduana",
@@ -117,7 +117,7 @@ async function main() {
     
     let proj = config.project ?? "";
     while (!proj) {
-      proj = await ask(rl, "Proyecto (repo/slug)", "pfi-backend-core");
+      proj = await ask(rl, "Nombre del Proyecto (project)", "pfi-backend-core");
       if (!proj) {
         console.log("❌ El proyecto (slug) es obligatorio.");
       }

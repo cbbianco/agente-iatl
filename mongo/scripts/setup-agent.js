@@ -101,7 +101,7 @@ async function main() {
     
     let proj = args.project ?? current.project ?? "";
     while (!proj) {
-      proj = await ask(rl, "Proyecto (repo/slug)", "pfi-backend-core");
+      proj = await ask(rl, "Nombre del Proyecto (project)", "pfi-backend-core");
       if (!proj) {
         console.log("❌ El proyecto (slug) es obligatorio.");
       }
@@ -159,6 +159,13 @@ async function main() {
   if (!args.skipMigrate) {
     console.log("\n--- Migrando conocimiento semántico → ChromaDB ---\n");
     runNode("migrate-to-chroma.js");
+  }
+
+  console.log("\n--- Ejecutando revisión autónoma de arquitectura (COE Review) ---\n");
+  try {
+    runNode("coe-review.js");
+  } catch (err) {
+    console.warn("⚠️ Advertencia: No se pudo completar la revisión COE autónoma:", err.message);
   }
 
   console.log("\n✅ Agente IATL listo.");
