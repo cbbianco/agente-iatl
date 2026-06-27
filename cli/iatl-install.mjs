@@ -141,11 +141,16 @@ async function main() {
       config.sprintLabel = "";
       config.sprintDuration = "";
     }
-    config.architectureTarget = await ask(
-      rl,
-      "Arquitectura objetivo deseada (architectureTarget)",
-      config.architectureTarget,
-    );
+    const hasTargetArch = await askYesNo(rl, "¿Tienes una arquitectura deseada/objetivo?", true);
+    if (hasTargetArch) {
+      config.architectureTarget = await ask(
+        rl,
+        "Especifica la arquitectura objetivo (architectureTarget)",
+        config.architectureTarget || "hexagonal-lambda-nestjs",
+      );
+    } else {
+      config.architectureTarget = "";
+    }
     config.architectureCurrent = await ask(
       rl,
       "Arquitectura actual del proyecto base (architectureCurrent)",
