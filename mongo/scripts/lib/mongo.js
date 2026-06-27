@@ -1,7 +1,7 @@
 import { MongoClient } from "mongodb";
+import { loadConfig } from "./config.js";
 
 const DEFAULT_URI = process.env.IATL_MONGO_URI ?? "mongodb://127.0.0.1:27017";
-const DEFAULT_DB = process.env.IATL_MONGO_DB ?? "iatl_knowledge";
 
 let client;
 
@@ -10,7 +10,20 @@ export async function getDb() {
     client = new MongoClient(DEFAULT_URI);
     await client.connect();
   }
-  return client.db(DEFAULT_DB);
+
+  let dbName = process.env.IATL_MONGO_DB;
+  if (!dbName) {
+    try {
+      const config = loadConfig();
+      const project = config.project ?? "pfi-backend-core";
+      const normalizedProject = project.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+      dbName = `iatl_knowledge_${normalizedProject}`;
+    } catch (err) {
+      dbName = "iatl_knowledge";
+    }
+  }
+
+  return client.db(dbName);
 }
 
 export async function closeDb() {
@@ -20,4 +33,4 @@ export async function closeDb() {
   }
 }
 
-export { DEFAULT_URI, DEFAULT_DB };
+export { DEFAULT_URI };

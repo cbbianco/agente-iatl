@@ -3,19 +3,59 @@ import { spawn } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
+import { loadConfig } from "./config.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const DEFAULT_PERSIST_PATH = join(ROOT, "chroma-data");
-const COLLECTION_NAME = process.env.IATL_CHROMA_COLLECTION ?? "iatl_semantic_knowledge";
-const DEFAULT_PORT = Number(process.env.IATL_CHROMA_PORT ?? 8010);
-const DEFAULT_HOST = process.env.IATL_CHROMA_HOST ?? "127.0.0.1";
+
+function getChromaConfig() {
+  let project = "pfi-backend-core";
+  let host = "127.0.0.1";
+  let port = 8010;
+  let collection = "iatl_semantic_knowledge";
+
+  try {
+    const config = loadConfig();
+    if (config.project) project = config.project;
+    if (config.chroma) {
+      if (config.chroma.host) host = config.chroma.host;
+      if (config.chroma.port) port = Number(config.chroma.port);
+      if (config.chroma.collection) collection = config.chroma.collection;
+    } else {
+      // Generar dinámicamente si no está en config.json
+      const projectSlug = project.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+      let hash = 0;
+      for (let i = 0; i < project.length; i++) {
+        hash = project.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      port = 8010 + (Math.abs(hash) % 80);
+      collection = `iatl_semantic_${projectSlug}`;
+    }
+  } catch (e) {
+    // Ignorar si falla lectura
+  }
+
+  const projectSlug = project.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  const persistPath = process.env.IATL_CHROMA_PATH ?? join(ROOT, `chroma-data-${projectSlug}`);
+
+  return {
+    host: process.env.IATL_CHROMA_HOST ?? host,
+    port: Number(process.env.IATL_CHROMA_PORT ?? port),
+    collection: process.env.IATL_CHROMA_COLLECTION ?? collection,
+    persistPath,
+  };
+}
+
+const chromaCfg = getChromaConfig();
+const COLLECTION_NAME = chromaCfg.collection;
+const DEFAULT_PORT = chromaCfg.port;
+const DEFAULT_HOST = chromaCfg.host;
 
 let clientPromise;
 let collectionPromise;
 let serverPromise;
 
 function persistPath() {
-  return process.env.IATL_CHROMA_PATH ?? DEFAULT_PERSIST_PATH;
+  return chromaCfg.persistPath;
 }
 
 async function heartbeat(host, port) {
@@ -53,9 +93,10 @@ async function ensureServer() {
         mkdirSync(persistPath(), { recursive: true });
       }
 
+      // IMPORTANTE: usar 'npx -y' para evitar prompts interactivos
       const child = spawn(
         "npx",
-        ["chroma", "run", "--path", persistPath(), "--host", host, "--port", String(port)],
+        ["-y", "chromadb", "run", "--path", persistPath(), "--host", host, "--port", String(port)],
         { detached: true, stdio: "ignore", cwd: ROOT },
       );
       child.unref();

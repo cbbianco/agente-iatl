@@ -5,11 +5,13 @@
   "description": "Arquitectura multiagente IATL — instalador portable y documentación",
   "type": "module",
   "bin": {
-    "iatl-install": "./cli/iatl-install.mjs"
+    "iatl-install": "./cli/iatl-install.mjs",
+    "iatl-uninstall": "./cli/iatl-uninstall.mjs"
   },
   "scripts": {
     "install:iatl": "node cli/iatl-install.mjs",
-    "install:iatl:quick": "node cli/iatl-install.mjs --non-interactive --runtime cursor"
+    "install:iatl:quick": "node cli/iatl-install.mjs --non-interactive --runtime cursor",
+    "uninstall:iatl": "node cli/iatl-uninstall.mjs"
   },
   "engines": {
     "node": ">=18"

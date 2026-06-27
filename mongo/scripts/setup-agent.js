@@ -148,6 +148,20 @@ async function main() {
     await rl.close();
   }
 
+  // Generar configuraciones dinámicas y aisladas por proyecto para ChromaDB
+  const projectSlug = config.project.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  let hash = 0;
+  for (let i = 0; i < config.project.length; i++) {
+    hash = config.project.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const port = 8010 + (Math.abs(hash) % 80);
+
+  config.chroma = {
+    host: "127.0.0.1",
+    port,
+    collection: `iatl_semantic_${projectSlug}`
+  };
+
   const saved = saveConfig(config);
   console.log("\n✅ config.json actualizado:");
   console.log(JSON.stringify(saved, null, 2));
