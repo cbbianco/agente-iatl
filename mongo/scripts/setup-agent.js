@@ -124,6 +124,8 @@ function parseArgs(argv) {
     else if (a === "--project-root" && argv[i + 1]) out.projectRoot = argv[++i];
     else if (a === "--context" && argv[i + 1]) out.projectContext = argv[++i];
     else if (a === "--sprint" && argv[i + 1]) out.sprintLabel = argv[++i];
+    else if (a === "--sprint-active" && argv[i + 1]) out.sprintActive = argv[++i] === "true";
+    else if (a === "--sprint-duration" && argv[i + 1]) out.sprintDuration = argv[++i];
     else if (a === "--architecture" && argv[i + 1]) out.architectureTarget = argv[++i];
     else if (a === "--architecture-current" && argv[i + 1]) out.architectureCurrent = argv[++i];
     else if (a === "--retention" && argv[i + 1]) out.retentionDays = argv[++i];
@@ -140,6 +142,14 @@ async function ask(rl, question, defaultValue = "") {
   const suffix = defaultValue ? ` [${defaultValue}]` : "";
   const answer = (await rl.question(`${question}${suffix}: `)).trim();
   return answer || defaultValue;
+}
+
+async function askYesNo(rl, question, defaultYes = true) {
+  const def = defaultYes ? "s" : "n";
+  const answer = (await ask(rl, `${question} (s/n)`, def)).toLowerCase();
+  if (["s", "si", "sí", "y", "yes"].includes(answer)) return true;
+  if (["n", "no"].includes(answer)) return false;
+  return defaultYes;
 }
 
 function runNode(script, extraArgs = []) {
@@ -177,7 +187,9 @@ async function main() {
         args.projectContext ??
         config.projectContext ??
         "Backend NestJS lambdas hexagonales PFI (Aduana Chile)",
+      sprintActive: args.sprintActive ?? config.sprintActive ?? false,
       sprintLabel: args.sprintLabel ?? config.sprintLabel ?? "",
+      sprintDuration: args.sprintDuration ?? config.sprintDuration ?? "",
       architectureTarget:
         args.architectureTarget ?? config.architectureTarget ?? "hexagonal-lambda-nestjs",
       architectureCurrent:
@@ -222,7 +234,16 @@ async function main() {
       current.projectContext ??
         "Backend PFI: lambdas NestJS hexagonales, API Gateway, integración legacy Aduana",
     );
-    config.sprintLabel = await ask(rl, "Sprint activo (ej. 2026-S12)", current.sprintLabel ?? "");
+    const hasSprint = await askYesNo(rl, "¿Tienes un Sprint activo?", true);
+    if (hasSprint) {
+      config.sprintActive = true;
+      config.sprintLabel = await ask(rl, "En qué Sprint vas (sprintLabel - ej. 2026-S12)", current.sprintLabel || "Sprint 1");
+      config.sprintDuration = await ask(rl, "Duración del Sprint (ej. 2 semanas)", current.sprintDuration || "2 semanas");
+    } else {
+      config.sprintActive = false;
+      config.sprintLabel = "";
+      config.sprintDuration = "";
+    }
     config.architectureTarget = await ask(
       rl,
       "Arquitectura objetivo deseada (architectureTarget)",

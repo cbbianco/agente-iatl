@@ -27,6 +27,8 @@ function parseArgs(argv) {
     else if (a === "--project" && argv[i + 1]) out.project = argv[++i];
     else if (a === "--context" && argv[i + 1]) out.projectContext = argv[++i];
     else if (a === "--sprint" && argv[i + 1]) out.sprintLabel = argv[++i];
+    else if (a === "--sprint-active" && argv[i + 1]) out.sprintActive = argv[++i] === "true";
+    else if (a === "--sprint-duration" && argv[i + 1]) out.sprintDuration = argv[++i];
     else if (a === "--architecture" && argv[i + 1]) out.architectureTarget = argv[++i];
     else if (a === "--architecture-current" && argv[i + 1]) out.architectureCurrent = argv[++i];
     else if (a === "--retention" && argv[i + 1]) out.retentionDays = argv[++i];
@@ -82,7 +84,9 @@ async function main() {
     projectContext:
       args.projectContext ??
       "Backend PFI: lambdas NestJS hexagonales, API Gateway, integración legacy Aduana",
+    sprintActive: args.sprintActive ?? false,
     sprintLabel: args.sprintLabel ?? "",
+    sprintDuration: args.sprintDuration ?? "",
     architectureTarget: args.architectureTarget ?? "hexagonal-lambda-nestjs",
     architectureCurrent: args.architectureCurrent ?? "layered",
     retentionDays: Number(args.retentionDays ?? 14),
@@ -127,7 +131,16 @@ async function main() {
     config.project = proj;
 
     config.projectContext = await ask(rl, "Contexto del proyecto (1 línea)", config.projectContext);
-    config.sprintLabel = await ask(rl, "Sprint activo (ej. 2026-S12)", config.sprintLabel);
+    const hasSprint = await askYesNo(rl, "¿Tienes un Sprint activo?", true);
+    if (hasSprint) {
+      config.sprintActive = true;
+      config.sprintLabel = await ask(rl, "En qué Sprint vas (sprintLabel - ej. 2026-S12)", config.sprintLabel || "Sprint 1");
+      config.sprintDuration = await ask(rl, "Duración del Sprint (ej. 2 semanas)", config.sprintDuration || "2 semanas");
+    } else {
+      config.sprintActive = false;
+      config.sprintLabel = "";
+      config.sprintDuration = "";
+    }
     config.architectureTarget = await ask(
       rl,
       "Arquitectura objetivo deseada (architectureTarget)",
@@ -183,8 +196,12 @@ async function main() {
       projectRoot,
       "--context",
       config.projectContext,
+      "--sprint-active",
+      String(config.sprintActive),
       "--sprint",
       config.sprintLabel,
+      "--sprint-duration",
+      config.sprintDuration,
       "--architecture",
       config.architectureTarget,
       "--retention",
