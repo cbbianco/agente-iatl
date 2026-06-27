@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * COE Review Autónomo — Revisor de Arquitectura IATL.
- * Escanea el projectRoot configurado, analiza su alineación arquitectónica y genera un reporte COE-REVIEW.md.
+ * Escanea el projectRoot configurado, analiza su alineación arquitectónica de acuerdo a lo que encuentra
+ * sin asumir la arquitectura, y compara con el target deseado y la arquitectura base configurada.
  */
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve, relative, basename } from "node:path";
@@ -49,7 +50,9 @@ async function main() {
   const config = loadConfig();
   const projectRoot = config.projectRoot;
   const project = config.project ?? "pfi-backend-core";
+  
   const archTarget = config.architectureTarget ?? "hexagonal-lambda-nestjs";
+  const archCurrentDeclared = config.architectureCurrent ?? "layered";
 
   if (!projectRoot) {
     console.error("❌ Error: No se ha configurado un projectRoot en config.json.");
@@ -77,36 +80,70 @@ async function main() {
     }
   }
 
-  // 2. Analizar estructura de directorios
-  const hasSrc = dirs.some((d) => d.name === "src");
-  const hasDomain = dirs.some((d) => /domain|core/i.test(d.name));
-  const hasApplication = dirs.some((d) => /application|usecases|use-cases/i.test(d.name));
-  const hasInfrastructure = dirs.some((d) => /infrastructure|adapters|infra/i.test(d.name));
-  const hasPorts = dirs.some((d) => /ports|interfaces|entrypoints/i.test(d.name));
+  // 2. Detección DInámica de la Arquitectura Existente (Sin Asumir)
+  // Contar palabras clave en los nombres de directorios
+  const dirNames = dirs.map((d) => d.name.toLowerCase());
+  
+  let hexagonalIndicators = 0;
+  if (dirNames.some((n) => /domain|core/i.test(n))) hexagonalIndicators++;
+  if (dirNames.some((n) => /application|usecases|use-cases/i.test(n))) hexagonalIndicators++;
+  if (dirNames.some((n) => /infrastructure|adapters|infra/i.test(n))) hexagonalIndicators++;
+  if (dirNames.some((n) => /ports|entrypoints|interfaces/i.test(n))) hexagonalIndicators++;
 
-  // 3. Evaluar frameworks y herramientas de desplaje
-  const hasServerless = files.some((f) => f.name === "serverless.yml" || f.name === "serverless.yaml");
-  const hasCDK = files.some((f) => f.name === "cdk.json") || dirs.some((d) => d.name === "cdk");
+  let mvcIndicators = 0;
+  if (dirNames.some((n) => /controller/i.test(n))) mvcIndicators++;
+  if (dirNames.some((n) => /model/i.test(n))) mvcIndicators++;
+  if (dirNames.some((n) => /view/i.test(n))) mvcIndicators++;
+
+  let layeredIndicators = 0;
+  if (dirNames.some((n) => /service/i.test(n))) layeredIndicators++;
+  if (dirNames.some((n) => /controller/i.test(n))) layeredIndicators++;
+  if (dirNames.some((n) => /repository|dao/i.test(n))) layeredIndicators++;
+
+  let serverlessIndicators = 0;
+  const hasServerlessFile = files.some((f) => f.name === "serverless.yml" || f.name === "serverless.yaml");
+  const hasServerless = hasServerlessFile;
+  const hasCDK = files.some((f) => f.name === "cdk.json");
   const hasSAM = files.some((f) => f.name === "template.yaml" || f.name === "template.yml");
+  if (hasServerlessFile) serverlessIndicators += 2;
+  if (hasSAM) serverlessIndicators += 2;
+  if (dirNames.some((n) => /handler|lambda|function/i.test(n))) serverlessIndicators++;
 
-  // 4. Analizar dependencias en package.json
+  // Determinar arquitectura predominante detectada
+  let detectedArch = "Monolito Plano / Script-based";
+  let maxScore = 0;
+
+  if (hexagonalIndicators >= 2 && hexagonalIndicators >= mvcIndicators && hexagonalIndicators >= layeredIndicators) {
+    detectedArch = "Hexagonal / Clean Architecture";
+    maxScore = hexagonalIndicators;
+  } else if (mvcIndicators >= 2 && mvcIndicators >= layeredIndicators) {
+    detectedArch = "MVC (Model-View-Controller)";
+    maxScore = mvcIndicators;
+  } else if (layeredIndicators >= 2) {
+    detectedArch = "Layered / 3-Tier (Controllers-Services-Repositories)";
+    maxScore = layeredIndicators;
+  } else if (serverlessIndicators >= 2) {
+    detectedArch = "Serverless / Event-Driven Functions";
+    maxScore = serverlessIndicators;
+  }
+
+  // 3. Evaluar frameworks y dependencias en package.json
   const deps = packageJson?.dependencies ?? {};
   const devDeps = packageJson?.devDependencies ?? {};
   const usesNest = deps["@nestjs/core"] || devDeps["@nestjs/core"];
   const usesTypeORM = deps["typeorm"] || deps["@nestjs/typeorm"];
   const usesAwsSdk = deps["aws-sdk"] || deps["@aws-sdk/client-s3"] || devDeps["aws-sdk"];
 
-  // 5. Analizar violaciones de acoplamiento en archivos del dominio (Hexagonal check)
+  // 4. Analizar violaciones de acoplamiento y archivos complejos
   const violations = [];
   const largeFiles = [];
-
   const codeFiles = files.filter((f) => /\.(ts|js|mjs)$/.test(f.name));
 
   for (const file of codeFiles) {
     const relPath = relative(projectRoot, file.path);
     
-    // Regla de archivos grandes
-    if (file.size > 24000) { // aprox > 600-800 líneas
+    // Regla de archivos grandes (>600 líneas)
+    if (file.size > 24000) {
       try {
         const content = readFileSync(file.path, "utf8");
         const lines = content.split("\n").length;
@@ -116,7 +153,7 @@ async function main() {
       } catch (e) {}
     }
 
-    // Regla de acoplamiento del Dominio (solo si el path tiene 'domain' o 'core')
+    // Si se detecta Hexagonal o se busca Hexagonal, chequear acoplamiento del Dominio
     if (/domain|core/i.test(relPath)) {
       try {
         const content = readFileSync(file.path, "utf8");
@@ -129,68 +166,105 @@ async function main() {
           violations.push({
             file: relPath,
             imports: imports.join(", "),
-            reason: "El dominio no debe acoplarse a librerías de infraestructura, frameworks ni ORMs directos.",
+            reason: "Acoplamiento del Dominio: el núcleo del negocio no debe depender de infraestructura o frameworks de red/base de datos.",
           });
         }
       } catch (e) {}
     }
   }
 
-  // 6. Calcular puntajes
-  let scoreArchitecture = 20; // base por tener archivos ts/js
-  if (hasDomain) scoreArchitecture += 20;
-  if (hasApplication) scoreArchitecture += 20;
-  if (hasInfrastructure) scoreArchitecture += 20;
-  if (hasPorts || hasSrc) scoreArchitecture += 20;
+  // 5. Comparar arquitectura detectada con la declarada y el target
+  const matchesDeclared = detectedArch.toLowerCase().includes(archCurrentDeclared.toLowerCase()) || 
+                          (archCurrentDeclared.toLowerCase() === "hexagonal" && detectedArch.includes("Hexagonal")) ||
+                          (archCurrentDeclared.toLowerCase() === "mvc" && detectedArch.includes("MVC")) ||
+                          (archCurrentDeclared.toLowerCase() === "layered" && detectedArch.includes("Layered"));
 
-  // Penalizar por violaciones arquitectónicas
-  const violationPenalties = Math.min(violations.length * 10, 40);
-  const finalScore = Math.max(scoreArchitecture - violationPenalties, 10);
+  const matchesTarget = detectedArch.toLowerCase().includes(archTarget.toLowerCase()) ||
+                        (archTarget.toLowerCase().includes("hexagonal") && detectedArch.includes("Hexagonal")) ||
+                        (archTarget.toLowerCase().includes("serverless") && detectedArch.includes("Serverless"));
+
+  // 6. Calcular puntaje dinámico basado en la brecha con el target
+  let gapScore = 100;
+  const gaps = [];
+
+  if (!matchesTarget) {
+    gapScore -= 30; // penalización si la arquitectura detectada no coincide con el target
+    gaps.push(`La arquitectura detectada (${detectedArch}) no coincide con la arquitectura objetivo deseadas (${archTarget}).`);
+  }
+
+  if (archTarget.includes("hexagonal")) {
+    if (!dirNames.some((n) => /domain|core/i.test(n))) {
+      gapScore -= 15;
+      gaps.push("Falta la capa de Dominio (domain/core) para aislar las reglas de negocio puras.");
+    }
+    if (!dirNames.some((n) => /infrastructure|adapters|infra/i.test(n))) {
+      gapScore -= 15;
+      gaps.push("Falta la capa de Infraestructura/Adaptadores (adapters/infrastructure) para desacoplar bases de datos y frameworks.");
+    }
+    if (!dirNames.some((n) => /ports|interfaces|entrypoints/i.test(n))) {
+      gapScore -= 10;
+      gaps.push("Falta definir Puertos/Interfaces claros para la comunicación con el exterior.");
+    }
+  }
+
+  if (violations.length > 0) {
+    gapScore -= Math.min(violations.length * 5, 20);
+  }
+  if (largeFiles.length > 0) {
+    gapScore -= Math.min(largeFiles.length * 5, 10);
+  }
+
+  const finalScore = Math.max(gapScore, 10);
 
   // 7. Generar reporte Markdown
   const timestamp = new Date().toLocaleString("es-CL", { timeZone: "America/Santiago" });
   
-  let report = `# 🛡️ COE Review de Arquitectura — ${project.toUpperCase()}
+  let report = `# 🛡️ COE Review de Arquitectura Dinámico — ${project.toUpperCase()}
 
 Generado de forma autónoma por el agente de revisión de código de IATL (**@pfi-code-reviewer** / **Daniel Chiang**).
 
 ## 📊 Resumen Ejecutivo
 - **Proyecto Analizado:** \`${project}\`
 - **Ruta Root:** \`${projectRoot}\`
-- **Target Arquitectónico:** \`${archTarget}\`
 - **Fecha de Análisis:** \`${timestamp}\`
-- **Puntaje de Alineación Arquitectónica (COE):** \`${finalScore}/100\`
+
+### ⚙️ Configuración del Entorno de Instalación
+- **Arquitectura Base Declarada (Base/Root):** \`${archCurrentDeclared}\`
+- **Arquitectura Objetivo Deseada (Target):** \`${archTarget}\`
+- **Arquitectura Real Detectada en Código:** \`${detectedArch}\`
+- **Alineación Declarado vs Detectado:** ${matchesDeclared ? "✅ Consistente" : "⚠️ Desviado (Declaraste '" + archCurrentDeclared + "' pero detectamos '" + detectedArch + "')"}
+- **Puntaje de Alineación con el Target (COE Score):** \`${finalScore}/100\`
 
 ---
 
-## 🏛️ Diagnóstico de la Estructura de Directorios
+## 🏛️ Análisis Estructural del Código Encontrado
 
-Evaluación de componentes del patrón **Hexagonal**:
+El escáner analizó dinámicamente las carpetas y dependencias de la base de código, arrojando el siguiente diagnóstico:
 
-| Capa / Patrón | Estado | Observación |
-| :--- | :---: | :--- |
-| **Dominio (Domain/Core)** | ${hasDomain ? "✅ Detectado" : "❌ No detectado"} | Contiene las entidades y reglas de negocio puras. |
-| **Aplicación (Application/Cases)** | ${hasApplication ? "✅ Detectado" : "❌ No detectado"} | Casos de uso e interfaces de servicios. |
-| **Infraestructura (Infrastructure/Adapters)** | ${hasInfrastructure ? "✅ Detectado" : "❌ No detectado"} | Adaptadores de bases de datos, APIs externas y frameworks. |
-| **Puertos/Interfaces (Ports/Entrypoints)** | ${hasPorts || hasSrc ? "✅ Detectado" : "❌ No detectado"} | Controladores HTTP, Lambda handlers o puntos de entrada del sistema. |
+### 📁 Carpetas Relevantes Detectadas
+${dirs.length === 0 ? "*El directorio raíz está plano o no tiene carpetas organizativas.*" : dirs.map((d) => `- \`${relative(projectRoot, d.path)}\``).slice(0, 15).join("\n")}
+${dirs.length > 15 ? `*... y ${dirs.length - 15} carpetas más.*` : ""}
 
-### 🛠️ Frameworks y Tecnologías Detectadas
-- **Framework Principal:** ${usesNest ? "NestJS" : (packageJson ? "Node.js estándar / Express" : "No detectado en package.json")}
-- **Acceso a Datos / ORM:** ${usesTypeORM ? "TypeORM (común en NestJS)" : "No se detectaron ORMs comunes en las dependencias directas"}
-- **Infraestructura Cloud:** ${hasServerless ? "Serverless Framework" : hasCDK ? "AWS CDK" : hasSAM ? "AWS SAM" : "No se detectaron configs de CDK/Serverless en primer nivel"}
-- **Uso de AWS SDK:** ${usesAwsSdk ? "Sí (instalado en dependencias)" : "No detectado"}
+### 🛠️ Ecosistema Tecnológico Encontrado
+- **Framework Principal:** ${usesNest ? "NestJS" : (packageJson ? "Node.js estándar / Express" : "No detectado en package.json o sin dependencias estándar")}
+- **Acceso a Datos / ORM:** ${usesTypeORM ? "TypeORM" : "No se detectaron ORMs comunes en las dependencias"}
+- **Infraestructura Cloud:** ${hasServerless ? "Serverless Framework" : hasCDK ? "AWS CDK" : hasSAM ? "AWS SAM" : "No se detectaron herramientas de infraestructura como código en raíz"}
 
 ---
 
-## ⚠️ Hallazgos y Desviaciones Arquitectónicas (Antipatrones)
-
-### 1. Acoplamiento del Dominio a Infraestructura (Total: ${violations.length})
-> [!IMPORTANT]
-> Según los principios de Clean Architecture y Arquitectura Hexagonal, el núcleo del dominio debe ser agnóstico a la tecnología de base de datos, frameworks de red y proveedores de la nube.
+## 🔀 Brechas y Gaps Arquitectónicos (Target: ${archTarget})
 
 ${
+  gaps.length === 0
+    ? "✅ **El proyecto está perfectamente alineado con los objetivos del target de arquitectura.**"
+    : `### ⚠️ Desviaciones y Tareas Pendientes para llegar al Target:
+${gaps.map((g) => `- ${g}`).join("\n")}`
+}
+
+### 1. Acoplamiento del Dominio a Infraestructura (Total: ${violations.length})
+${
   violations.length === 0
-    ? "*¡Felicidades! No se detectaron importaciones de infraestructura en el dominio analizado.*"
+    ? "*No se detectaron importaciones de infraestructura acopladas en capas de dominio.*"
     : violations
         .map(
           (v) =>
@@ -200,12 +274,9 @@ ${
 }
 
 ### 2. Archivos Monolíticos / Complejos (Total: ${largeFiles.length})
-> [!WARNING]
-> Los archivos de código con más de 600 líneas de código incrementan el riesgo de acoplamiento, dificultan los tests unitarios y violan el Principio de Responsabilidad Única (SRP).
-
 ${
   largeFiles.length === 0
-    ? "*No se detectaron archivos excesivamente grandes en el escaneo.*"
+    ? "*No se detectaron archivos de código excesivamente extensos (>600 líneas).*"
     : largeFiles
         .map(
           (lf) =>
@@ -216,14 +287,14 @@ ${
 
 ---
 
-## 💡 Recomendaciones y Plan de Acción (COE)
+## 💡 Recomendaciones y Plan de Acción del COE
 
-1. **Aislamiento del Dominio:** Asegurar que las interfaces de entrada/salida (Puertos) definan el contrato y los adaptadores implementen TypeORM o llamadas a AWS SDK, manteniendo el dominio libre de importaciones directas de bases de datos.
-2. **Refactorización de Controladores/Handlers:** Si hay lógicas de validación o transformación pesadas mezcladas en los controladores, moverlas a DTOs de entrada validados mediante Joi/class-validator.
-3. **Modularización Lambda:** Dividir las funciones en sub-módulos si el proyecto root utiliza NestJS en Lambdas, asegurando tiempos mínimos de inicialización (cold-starts).
+1. **Alinear la Estructura de Directorios:** Si tu objetivo es \`${archTarget}\`, reestructura el proyecto base creando carpetas específicas de acuerdo a los hallazgos descritos arriba.
+2. **Desacoplar Reglas de Negocio:** Asegura que los módulos de lógica pura no importen librerías de conexión de red o frameworks. Usa inyección de dependencias para los adaptadores.
+3. **Reducción de Deuda Técnica:** Refactoriza los archivos complejos reportados para asegurar un mantenimiento ágil y pruebas unitarias rápidas.
 
 ---
-*Reporte generado automáticamente en el flujo de instalación de IATL.*
+*Reporte de análisis arquitectónico autónomo sin asunciones previas.*
 `;
 
   const destPath = join(projectRoot, "COE-REVIEW.md");

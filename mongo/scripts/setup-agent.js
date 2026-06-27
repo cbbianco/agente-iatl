@@ -33,6 +33,7 @@ function parseArgs(argv) {
     else if (a === "--context" && argv[i + 1]) out.projectContext = argv[++i];
     else if (a === "--sprint" && argv[i + 1]) out.sprintLabel = argv[++i];
     else if (a === "--architecture" && argv[i + 1]) out.architectureTarget = argv[++i];
+    else if (a === "--architecture-current" && argv[i + 1]) out.architectureCurrent = argv[++i];
     else if (a === "--retention" && argv[i + 1]) out.retentionDays = argv[++i];
     else if (a === "--ide" && argv[i + 1]) out.ide = argv[++i];
     else if (a === "--runtime" && argv[i + 1]) out.runtime = argv[++i];
@@ -87,6 +88,8 @@ async function main() {
       sprintLabel: args.sprintLabel ?? config.sprintLabel ?? "",
       architectureTarget:
         args.architectureTarget ?? config.architectureTarget ?? "hexagonal-lambda-nestjs",
+      architectureCurrent:
+        args.architectureCurrent ?? config.architectureCurrent ?? "layered",
       retentionDays: Number(args.retentionDays ?? config.retentionDays ?? 14),
       legacyMonolithPath: args.legacyMonolithPath ?? config.legacyMonolithPath ?? "",
       legacyApiBaseDev: args.legacyApiBaseDev ?? config.legacyApiBaseDev ?? "",
@@ -129,8 +132,13 @@ async function main() {
     config.sprintLabel = await ask(rl, "Sprint activo (ej. 2026-S12)", current.sprintLabel ?? "");
     config.architectureTarget = await ask(
       rl,
-      "Arquitectura a utilizar",
+      "Arquitectura objetivo deseada (architectureTarget)",
       current.architectureTarget ?? "hexagonal-lambda-nestjs",
+    );
+    config.architectureCurrent = await ask(
+      rl,
+      "Arquitectura actual del proyecto base (architectureCurrent)",
+      current.architectureCurrent ?? "layered",
     );
     config.legacyMonolithPath = await ask(
       rl,

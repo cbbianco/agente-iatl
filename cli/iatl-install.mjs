@@ -28,6 +28,7 @@ function parseArgs(argv) {
     else if (a === "--context" && argv[i + 1]) out.projectContext = argv[++i];
     else if (a === "--sprint" && argv[i + 1]) out.sprintLabel = argv[++i];
     else if (a === "--architecture" && argv[i + 1]) out.architectureTarget = argv[++i];
+    else if (a === "--architecture-current" && argv[i + 1]) out.architectureCurrent = argv[++i];
     else if (a === "--retention" && argv[i + 1]) out.retentionDays = argv[++i];
     else if (a === "--legacy-path" && argv[i + 1]) out.legacyMonolithPath = argv[++i];
     else if (a === "--legacy-api" && argv[i + 1]) out.legacyApiBaseDev = argv[++i];
@@ -83,6 +84,7 @@ async function main() {
       "Backend PFI: lambdas NestJS hexagonales, API Gateway, integración legacy Aduana",
     sprintLabel: args.sprintLabel ?? "",
     architectureTarget: args.architectureTarget ?? "hexagonal-lambda-nestjs",
+    architectureCurrent: args.architectureCurrent ?? "layered",
     retentionDays: Number(args.retentionDays ?? 14),
     legacyMonolithPath: args.legacyMonolithPath ?? "",
     legacyApiBaseDev: args.legacyApiBaseDev ?? "",
@@ -128,8 +130,13 @@ async function main() {
     config.sprintLabel = await ask(rl, "Sprint activo (ej. 2026-S12)", config.sprintLabel);
     config.architectureTarget = await ask(
       rl,
-      "Arquitectura a utilizar",
+      "Arquitectura objetivo deseada (architectureTarget)",
       config.architectureTarget,
+    );
+    config.architectureCurrent = await ask(
+      rl,
+      "Arquitectura actual del proyecto base (architectureCurrent)",
+      config.architectureCurrent || "layered",
     );
     config.retentionDays = Number(
       await ask(rl, "Retención cierres HITL (días)", String(config.retentionDays)),
