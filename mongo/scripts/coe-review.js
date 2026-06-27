@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * COE Review Autónomo — Revisor de Arquitectura IATL.
- * Escanea el projectRoot configurado, analiza su alineación arquitectónica de acuerdo a lo que encuentra
- * sin asumir la arquitectura, y compara con el target deseado y la arquitectura base configurada.
+ * COE Review Autónomo — Revisor de Arquitectura y Buenas Prácticas IATL.
+ * Escanea el projectRoot configurado, analiza su alineación arquitectónica de acuerdo a lo que encuentra,
+ * realiza una revisión estática del código para detectar buenas y malas prácticas, y reporta hallazgos detallados.
  */
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve, relative, basename } from "node:path";
@@ -45,7 +45,7 @@ function scanDir(dir, maxDepth = 4, currentDepth = 0) {
 }
 
 async function main() {
-  console.log("🔍 Iniciando revisión autónoma de arquitectura...");
+  console.log("🔍 Iniciando revisión autónoma y exhaustiva de arquitectura y código...");
   
   const config = loadConfig();
   const projectRoot = config.projectRoot;
@@ -80,8 +80,7 @@ async function main() {
     }
   }
 
-  // 2. Detección DInámica de la Arquitectura Existente (Sin Asumir)
-  // Contar palabras clave en los nombres de directorios
+  // 2. Detección Dinámica de la Arquitectura Existente (Sin Asumir)
   const dirNames = dirs.map((d) => d.name.toLowerCase());
   
   let hexagonalIndicators = 0;
@@ -109,67 +108,176 @@ async function main() {
   if (hasSAM) serverlessIndicators += 2;
   if (dirNames.some((n) => /handler|lambda|function/i.test(n))) serverlessIndicators++;
 
-  // Determinar arquitectura predominante detectada
   let detectedArch = "Monolito Plano / Script-based";
-  let maxScore = 0;
-
   if (hexagonalIndicators >= 2 && hexagonalIndicators >= mvcIndicators && hexagonalIndicators >= layeredIndicators) {
     detectedArch = "Hexagonal / Clean Architecture";
-    maxScore = hexagonalIndicators;
   } else if (mvcIndicators >= 2 && mvcIndicators >= layeredIndicators) {
     detectedArch = "MVC (Model-View-Controller)";
-    maxScore = mvcIndicators;
   } else if (layeredIndicators >= 2) {
     detectedArch = "Layered / 3-Tier (Controllers-Services-Repositories)";
-    maxScore = layeredIndicators;
   } else if (serverlessIndicators >= 2) {
     detectedArch = "Serverless / Event-Driven Functions";
-    maxScore = serverlessIndicators;
   }
 
-  // 3. Evaluar frameworks y dependencias en package.json
+  // 3. Evaluar frameworks y dependencias
   const deps = packageJson?.dependencies ?? {};
   const devDeps = packageJson?.devDependencies ?? {};
   const usesNest = deps["@nestjs/core"] || devDeps["@nestjs/core"];
   const usesTypeORM = deps["typeorm"] || deps["@nestjs/typeorm"];
   const usesAwsSdk = deps["aws-sdk"] || deps["@aws-sdk/client-s3"] || devDeps["aws-sdk"];
 
-  // 4. Analizar violaciones de acoplamiento y archivos complejos
-  const violations = [];
+  // 4. ESTRATEGIA EXHAUSTIVA DE ANÁLISIS DE CÓDIGO (Buenas y Malas Prácticas)
+  const codeFiles = files.filter((f) => /\.(ts|js|mjs|java|py|go|cs)$/.test(f.name));
+  
+  const badPractices = [];
+  const goodPractices = [];
   const largeFiles = [];
-  const codeFiles = files.filter((f) => /\.(ts|js|mjs)$/.test(f.name));
+  
+  // Archivos de configuración de calidad encontrados
+  const linterConfigs = files.filter((f) => /eslint|prettier|tsconfig|package\.json/i.test(f.name)).map(f => f.name);
+  if (linterConfigs.length > 0) {
+    goodPractices.push({
+      category: "Herramientas de Calidad",
+      description: `Se detectaron archivos de configuración de calidad: ${linterConfigs.join(", ")}.`
+    });
+  }
+
+  // Archivos de Test detectados
+  const testFiles = files.filter((f) => /\.(spec|test|step)\./i.test(f.name));
+  if (testFiles.length > 0) {
+    goodPractices.push({
+      category: "Pruebas Unitarias / Integración",
+      description: `Se encontraron ${testFiles.length} archivos de pruebas (.spec / .test), lo cual promueve la estabilidad y cobertura.`
+    });
+  }
 
   for (const file of codeFiles) {
     const relPath = relative(projectRoot, file.path);
-    
-    // Regla de archivos grandes (>600 líneas)
-    if (file.size > 24000) {
-      try {
-        const content = readFileSync(file.path, "utf8");
-        const lines = content.split("\n").length;
-        if (lines > 600) {
-          largeFiles.push({ path: relPath, lines });
-        }
-      } catch (e) {}
+    let content = "";
+    try {
+      content = readFileSync(file.path, "utf8");
+    } catch (e) {
+      continue;
     }
 
-    // Si se detecta Hexagonal o se busca Hexagonal, chequear acoplamiento del Dominio
-    if (/domain|core/i.test(relPath)) {
-      try {
-        const content = readFileSync(file.path, "utf8");
-        const imports = [];
-        if (/@nestjs\//.test(content)) imports.push("NestJS Framework");
-        if (/typeorm|sequelize|mongoose|prisma/i.test(content)) imports.push("ORM/Database");
-        if (/aws-sdk|@aws-sdk/i.test(content)) imports.push("AWS SDK");
+    const lines = content.split("\n");
 
-        if (imports.length > 0) {
-          violations.push({
+    // A. Archivos complejos/grandes
+    if (lines.length > 500) {
+      largeFiles.push({ path: relPath, lines: lines.length });
+    }
+
+    // B. Buscar inyección de dependencias (NestJS/Spring)
+    if (content.includes("@Injectable") || content.includes("@Inject") || content.includes("@Autowired")) {
+      goodPractices.push({
+        category: "Inyección de Dependencias",
+        file: relPath,
+        description: "Uso correcto de inyección de dependencias para el desacoplamiento de componentes."
+      });
+    }
+
+    // C. Buscar DTOs e interfaces de validación
+    if (content.includes("@IsString") || content.includes("@IsNotEmpty") || content.includes("class Validator")) {
+      goodPractices.push({
+        category: "Validación de Entradas",
+        file: relPath,
+        description: "Implementación de decoradores de validación de datos (class-validator/DTO) para robustecer los endpoints."
+      });
+    }
+
+    // D. Escaneo de malas prácticas línea por línea
+    lines.forEach((line, index) => {
+      const lineNum = index + 1;
+
+      // 1. Secretos o credenciales harcodeadas
+      if (/(password|secret|token|api_key|private_key|passwd|clave)\s*[:=]\s*['"`][a-zA-Z0-9_\-\.\/]{10,}['"`]/i.test(line)) {
+        // Ignorar si parece ser parte de una prueba o un mock obvio
+        if (!line.includes("mock") && !line.includes("test")) {
+          badPractices.push({
             file: relPath,
-            imports: imports.join(", "),
-            reason: "Acoplamiento del Dominio: el núcleo del negocio no debe depender de infraestructura o frameworks de red/base de datos.",
+            line: lineNum,
+            code: line.trim(),
+            category: "Seguridad / Secretos Expuestos",
+            reason: "Posible credencial, contraseña o clave API harcodeada directamente en el código de producción."
           });
         }
-      } catch (e) {}
+      }
+
+      // 2. Uso abusivo de 'any' en TypeScript
+      if (/\bany\b/.test(line) && file.name.endsWith(".ts") && !line.includes("eslint-disable")) {
+        // Evitar falsos positivos comunes
+        if (line.includes(":") && !line.includes("import") && !line.includes("function") && !line.includes("class")) {
+          badPractices.push({
+            file: relPath,
+            line: lineNum,
+            code: line.trim(),
+            category: "Calidad de Tipado",
+            reason: "Uso del tipo genérico 'any' que anula la seguridad y ventajas de TypeScript."
+          });
+        }
+      }
+
+      // 3. console.log directo en vez de usar un logger
+      if (/\bconsole\.log\(/.test(line) && !line.includes("//")) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Logger / Depuración",
+          reason: "Uso de console.log en código operativo. Se recomienda implementar un logger estructurado (Winston, Nest Logger, etc.)."
+        });
+      }
+
+      // 4. Comentarios TODO/FIXME pendientes
+      if (/\/\/\s*(TODO|FIXME|XXX)/i.test(line)) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Deuda Técnica Pendiente",
+          reason: "Comentario de tarea pendiente o bug conocido sin resolver (TODO/FIXME)."
+        });
+      }
+
+      // 5. Código comentado (comentarios que parecen código ejecutable)
+      if (/^\s*\/\/\s*(const|let|var|function|class|if|import|return)\b/.test(line)) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Código Comentado",
+          reason: "Bloques de código comentados en producción. Se recomienda eliminarlos ya que el control de versiones (Git) mantiene el historial."
+        });
+      }
+
+      // 6. Consultas SQL o MongoDB directamente en el controlador o capa externa
+      if (/select\s+.*\s+from|db\..*\.find/i.test(line) && /controller/i.test(relPath)) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Acoplamiento de Datos",
+          reason: "Consultas de base de datos directamente en la capa de transporte/controladores. Violaría la responsabilidad única."
+        });
+      }
+    });
+
+    // E. Reglas de Acoplamiento de Dominio en Hexagonal
+    if (/domain|core/i.test(relPath)) {
+      const imports = [];
+      if (/@nestjs\//.test(content)) imports.push("NestJS Framework");
+      if (/typeorm|sequelize|mongoose|prisma/i.test(content)) imports.push("ORM/Database");
+      if (/aws-sdk|@aws-sdk/i.test(content)) imports.push("AWS SDK");
+
+      if (imports.length > 0) {
+        badPractices.push({
+          file: relPath,
+          line: 1,
+          code: "Importación externa en módulo del Dominio",
+          category: "Acoplamiento del Dominio",
+          reason: `El núcleo de negocio (domain) contiene acoplamiento directo a infraestructura/frameworks: [${imports.join(", ")}].`
+        });
+      }
     }
   }
 
@@ -181,63 +289,69 @@ async function main() {
 
   const matchesTarget = detectedArch.toLowerCase().includes(archTarget.toLowerCase()) ||
                         (archTarget.toLowerCase().includes("hexagonal") && detectedArch.includes("Hexagonal")) ||
-                        (archTarget.toLowerCase().includes("serverless") && detectedArch.includes("Serverless"));
+                        (archTarget.toLowerCase().includes("serverless") && detectedArch.includes("Serverless")) ||
+                        (archTarget.toLowerCase().includes("capas") && detectedArch.includes("Layered"));
 
-  // 6. Calcular puntaje dinámico basado en la brecha con el target
+  // 6. Calcular puntaje dinámico basado en la brecha con el target y malas prácticas
   let gapScore = 100;
   const gaps = [];
 
   if (!matchesTarget) {
-    gapScore -= 30; // penalización si la arquitectura detectada no coincide con el target
-    gaps.push(`La arquitectura detectada (${detectedArch}) no coincide con la arquitectura objetivo deseadas (${archTarget}).`);
+    gapScore -= 25;
+    gaps.push(`La arquitectura real detectada (${detectedArch}) no coincide con la arquitectura objetivo deseada (${archTarget}).`);
   }
 
-  if (archTarget.includes("hexagonal")) {
+  if (archTarget.includes("hexagonal") || archTarget.includes("clean")) {
     if (!dirNames.some((n) => /domain|core/i.test(n))) {
       gapScore -= 15;
-      gaps.push("Falta la capa de Dominio (domain/core) para aislar las reglas de negocio puras.");
+      gaps.push("Falta la carpeta o capa de Dominio pura (domain/core).");
     }
     if (!dirNames.some((n) => /infrastructure|adapters|infra/i.test(n))) {
       gapScore -= 15;
-      gaps.push("Falta la capa de Infraestructura/Adaptadores (adapters/infrastructure) para desacoplar bases de datos y frameworks.");
+      gaps.push("Falta la capa de Infraestructura/Adaptadores (adapters/infrastructure).");
     }
-    if (!dirNames.some((n) => /ports|interfaces|entrypoints/i.test(n))) {
+  } else if (archTarget.includes("capas") || archTarget.includes("layered")) {
+    if (!dirNames.some((n) => /service/i.test(n))) {
       gapScore -= 10;
-      gaps.push("Falta definir Puertos/Interfaces claros para la comunicación con el exterior.");
+      gaps.push("Falta la carpeta o capa lógica de Servicios (services).");
+    }
+    if (!dirNames.some((n) => /repository|dao/i.test(n))) {
+      gapScore -= 10;
+      gaps.push("Falta la carpeta o capa de acceso a datos (repositories/dao).");
     }
   }
 
-  if (violations.length > 0) {
-    gapScore -= Math.min(violations.length * 5, 20);
-  }
-  if (largeFiles.length > 0) {
-    gapScore -= Math.min(largeFiles.length * 5, 10);
-  }
+  // Descuento por malas prácticas acumuladas (máx 30 puntos)
+  const deductions = Math.min(badPractices.length * 2, 30);
+  gapScore -= deductions;
 
-  const finalScore = Math.max(gapScore, 10);
+  // Descuento por archivos gigantes (máx 10 puntos)
+  gapScore -= Math.min(largeFiles.length * 3, 10);
 
-  // 7. Generar reporte Markdown
+  const finalScore = Math.max(gapScore, 5);
+
+  // 7. Generar reporte Markdown exhaustivo
   const timestamp = new Date().toLocaleString("es-CL", { timeZone: "America/Santiago" });
   
-  let report = `# 🛡️ COE Review de Arquitectura Dinámico — ${project.toUpperCase()}
+  let report = `# 🛡️ COE Review de Arquitectura y Código — ${project.toUpperCase()}
 
-Generado de forma autónoma por el agente de revisión de código de IATL (**@pfi-code-reviewer** / **Daniel Chiang**).
+Reporte de revisión de código estático y alineación arquitectónica generado de forma autónoma por **@pfi-code-reviewer** (**Daniel Chiang**).
 
 ## 📊 Resumen Ejecutivo
 - **Proyecto Analizado:** \`${project}\`
 - **Ruta Root:** \`${projectRoot}\`
 - **Fecha de Análisis:** \`${timestamp}\`
 
-### ⚙️ Configuración del Entorno de Instalación
+### ⚙️ Configuración y Estado del Proyecto
 - **Arquitectura Base Declarada (Base/Root):** \`${archCurrentDeclared}\`
 - **Arquitectura Objetivo Deseada (Target):** \`${archTarget}\`
 - **Arquitectura Real Detectada en Código:** \`${detectedArch}\`
 - **Alineación Declarado vs Detectado:** ${matchesDeclared ? "✅ Consistente" : "⚠️ Desviado (Declaraste '" + archCurrentDeclared + "' pero detectamos '" + detectedArch + "')"}
-- **Puntaje de Alineación con el Target (COE Score):** \`${finalScore}/100\`
+- **Puntaje de Alineación y Calidad (COE Score):** \`${finalScore}/100\`
 
 ---
 
-## 🏛️ Análisis Estructural del Código Encontrado
+## 🏛️ Análisis Estructural y Tecnológico
 
 El escáner analizó dinámicamente las carpetas y dependencias de la base de código, arrojando el siguiente diagnóstico:
 
@@ -252,49 +366,66 @@ ${dirs.length > 15 ? `*... y ${dirs.length - 15} carpetas más.*` : ""}
 
 ---
 
+## 📈 Buenas Prácticas Detectadas (Total: ${goodPractices.length})
+
+${
+  goodPractices.length === 0
+    ? "*No se registraron indicadores automáticos de buenas prácticas estándar.*"
+    : goodPractices.map((g) => `- **${g.category}:** ${g.description} ${g.file ? `(en \`${g.file}\`)` : ""}`).join("\n")
+}
+
+---
+
+## ⚠️ Malas Prácticas y Code Smells Detectados (Total: ${badPractices.length})
+
+Se realizó un escaneo profundo en la lógica y sintaxis de los archivos de código fuente:
+
+${
+  badPractices.length === 0
+    ? "✅ **Felicidades! No se detectaron malas prácticas obvias de seguridad, tipado o acoplamiento.**"
+    : badPractices.slice(0, 30).map((bp) => {
+        const ext = bp.file.split('.').pop();
+        return `### 🚨 [${bp.category}] en [${bp.file}:${bp.line}](file:///${join(projectRoot, bp.file)}#L${bp.line})
+- **Problema:** ${bp.reason}
+- **Línea de Código:**
+  \x60\x60\x60${ext}
+  ${bp.code}
+  \x60\x60\x60
+`;
+      }).join("\n")
+}
+${badPractices.length > 30 ? `\n*... y ${badPractices.length - 30} malas prácticas adicionales.*` : ""}
+
+---
+
+## 📄 Archivos Monolíticos / Complejos (>500 líneas) (Total: ${largeFiles.length})
+${
+  largeFiles.length === 0
+    ? "*Excelente. Todos los archivos de código son compactos y legibles (<500 líneas).* "
+    : largeFiles.map((lf) => `- **Archivo:** [\`${lf.path}\`](file:///${join(projectRoot, lf.path)}) (${lf.lines} líneas)`).join("\n")
+}
+
+---
+
 ## 🔀 Brechas y Gaps Arquitectónicos (Target: ${archTarget})
 
 ${
   gaps.length === 0
-    ? "✅ **El proyecto está perfectamente alineado con los objetivos del target de arquitectura.**"
+    ? "✅ **El proyecto está alineado con los objetivos del target de arquitectura.**"
     : `### ⚠️ Desviaciones y Tareas Pendientes para llegar al Target:
 ${gaps.map((g) => `- ${g}`).join("\n")}`
-}
-
-### 1. Acoplamiento del Dominio a Infraestructura (Total: ${violations.length})
-${
-  violations.length === 0
-    ? "*No se detectaron importaciones de infraestructura acopladas en capas de dominio.*"
-    : violations
-        .map(
-          (v) =>
-            `- **Archivo:** [\`${v.file}\`](file:///${join(projectRoot, v.file)})\n  - **Importaciones detectadas:** \`${v.imports}\`\n  - **Problema:** ${v.reason}`,
-        )
-        .join("\n")
-}
-
-### 2. Archivos Monolíticos / Complejos (Total: ${largeFiles.length})
-${
-  largeFiles.length === 0
-    ? "*No se detectaron archivos de código excesivamente extensos (>600 líneas).*"
-    : largeFiles
-        .map(
-          (lf) =>
-            `- **Archivo:** [\`${lf.path}\`](file:///${join(projectRoot, lf.path)}) (${lf.lines} líneas)`,
-        )
-        .join("\n")
 }
 
 ---
 
 ## 💡 Recomendaciones y Plan de Acción del COE
 
-1. **Alinear la Estructura de Directorios:** Si tu objetivo es \`${archTarget}\`, reestructura el proyecto base creando carpetas específicas de acuerdo a los hallazgos descritos arriba.
-2. **Desacoplar Reglas de Negocio:** Asegura que los módulos de lógica pura no importen librerías de conexión de red o frameworks. Usa inyección de dependencias para los adaptadores.
-3. **Reducción de Deuda Técnica:** Refactoriza los archivos complejos reportados para asegurar un mantenimiento ágil y pruebas unitarias rápidas.
+1. **Alinear la Estructura de Directorios:** Si tu objetivo es \`${archTarget}\`, reestructura el proyecto base de acuerdo a los hallazgos descritos arriba.
+2. **Eliminar Secretos Expuestos:** Asegúrate de mover cualquier contraseña o token duro a variables de entorno (\`.env\` / secret manager).
+3. **Limpieza de logs y código comentado:** Remueve los \`console.log\` de depuración y limpia el código comentado para facilitar la lectura.
 
 ---
-*Reporte de análisis arquitectónico autónomo sin asunciones previas.*
+*Reporte de análisis arquitectónico autónomo e integral sin asunciones previas.*
 `;
 
   const destPath = join(projectRoot, "COE-REVIEW.md");
