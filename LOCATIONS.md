@@ -12,6 +12,7 @@
 | Chroma data (local) | `~/.cursor/iatl-knowledge/chroma-data/` | `pfi-agent-architecture/chroma/README.md` |
 | Setup agente | `~/.cursor/iatl-knowledge/setup-agent.js` | `pfi-agent-architecture/mongo/scripts/setup-agent.js` |
 | **CLI instalador portable** | `npm run install:iatl` (desde repo) | `pfi-agent-architecture/cli/iatl-install.mjs` |
+| **Guía instalación** | — | `pfi-agent-architecture/docs/INSTALL.md` |
 | **Docker stack** | `<proyecto>/.iatl-docker/` | `pfi-agent-architecture/docker/` |
 | Clasificación tickets | `query.js --classify-ticket` | `architecture/ticket-classification.md` |
 | Métricas calidad | `ingest.js ticket_metric` | `architecture/quality-metrics.md` |

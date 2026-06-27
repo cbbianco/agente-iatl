@@ -70,17 +70,32 @@ export function installArtifacts(runtimeTarget, projectRoot) {
     copyFileSync(example, dest);
   }
 
-  for (const skillMd of readdirSync(join(REPO_ROOT, "skills")).filter((f) => f.endsWith(".md"))) {
-    const skillName = skillMd.replace(/\.md$/, "");
+  const skillsRoot = join(REPO_ROOT, "skills");
+  for (const entry of readdirSync(skillsRoot)) {
+    const src = join(skillsRoot, entry);
+    if (statSync(src).isDirectory()) {
+      copyDir(src, join(paths.skills, entry));
+      continue;
+    }
+    if (!entry.endsWith(".md") || entry === "catalog.md") continue;
+    const skillName = entry.replace(/\.md$/, "");
     const destSkillDir = join(paths.skills, skillName);
     ensureDir(destSkillDir);
-    copyFileSync(join(REPO_ROOT, "skills", skillMd), join(destSkillDir, "SKILL.md"));
+    copyFileSync(src, join(destSkillDir, "SKILL.md"));
+  }
+
+  let repoVersion = "0.11.0";
+  try {
+    const pkg = JSON.parse(readFileSync(join(REPO_ROOT, "package.json"), "utf8"));
+    if (pkg.version) repoVersion = pkg.version;
+  } catch {
+    /* usar default */
   }
 
   const runtimeManifest = {
     runtimeTarget,
     installedAt: new Date().toISOString(),
-    repoVersion: "0.6.0",
+    repoVersion,
     paths,
     projectRoot,
     hubPath: paths.hub,

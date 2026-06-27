@@ -9,7 +9,7 @@ Documentación de la arquitectura de agentes IATL para **pfi-backend-core**.
 Un sistema de agentes cooperativos para desarrollo spec-driven en PFI:
 
 1. **@iatl** — orquestador principal; única interfaz con el desarrollador (César).
-2. **@pfi-tl-peer-daniel** — par revisor con perfil TL Daniel; debate toda Propuesta **antes** del gate HITL.
+2. **@pfi-tl-peer-daniel-analisis** / **@pfi-tl-peer-daniel-implementacion** — par TL Daniel (análisis + implementación); debate Propuesta **antes** del gate HITL.
 3. **@pfi-review-orchestrator** — pipeline post-código (CR analyst + Bugbot).
 4. **Hub Mongo + Chroma local** — contexto operativo (Mongo) + recall semántico (Chroma v2.0).
 
@@ -41,7 +41,7 @@ Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
 
 Ver [architecture/pipeline.md](architecture/pipeline.md).
 
-**Versión doc actual:** [0.6.0](CHANGELOG.md#060--2026-06-22)
+**Versión doc actual:** [0.11.0](CHANGELOG.md#0110--2026-06-27)
 
 ## Resolución de tickets (MCP-first)
 
@@ -58,54 +58,28 @@ Ver [skills/pfi-ticket-source-resolver.md](skills/pfi-ticket-source-resolver.md)
 - **Mongo** — hub operativo (tickets, ramas, cierres HITL): [mongo/](mongo/)
 - **Chroma** — capa semántica implementada (búsqueda embeddable): [architecture/knowledge-layer-chroma.md](architecture/knowledge-layer-chroma.md) · [chroma/](chroma/)
 
-## Instalación hub (una vez)
+## Instalación
 
-### Opción A — CLI portable (recomendado v0.6)
+Guía completa paso a paso: **[docs/INSTALL.md](docs/INSTALL.md)** (requisitos, CLI, manual, Docker, verificación, troubleshooting).
+
+### Inicio rápido (Cursor)
 
 ```bash
-cd pfi-agent-architecture
+git clone https://github.com/cbbianco/agente-iatl.git pfi-agent-architecture
+cd pfi-agent-architecture && npm install
 npm run install:iatl
-# Pregunta: runtime (Cursor | VS Code | Claude Code | Antigravity | Docker)
-# + proyecto, sprint, arquitectura, legacy, días retención
+# Mongo local :27017 + Chroma :8010 recomendados — ver guía
 ```
 
-### Opción B — Setup hub directo
-
-```bash
-cd ~/.cursor/iatl-knowledge
-npm install
-node setup-agent.js          # detecta runtime + config proyecto/sprint/arquitectura
-npm run init
-npm run seed-sources
-npm run migrate-chroma       # Mongo → Chroma (primera vez)
-```
-
-### Runtimes soportados
-
-| Runtime | Ubicación instalación |
-|---------|----------------------|
-| Cursor | `~/.cursor/{agents,skills,iatl-knowledge}` |
-| VS Code | `~/.iatl/` |
-| VS Code + Claude Code | `~/.claude/iatl/` |
-| Antigravity | `~/.antigravity/` |
-| Docker | `.iatl-docker/` en proyecto + `docker compose up` |
-
-Ver [docker/README.md](docker/README.md).
-
-Arrancar Chroma:
-
-```bash
-npx chroma run --path ./chroma-data --port 8010
-```
-
-Requisito: MongoDB local `127.0.0.1:27017`.
+Runtimes: Cursor · VS Code · Claude Code · Antigravity · Docker — detalle en [docs/INSTALL.md](docs/INSTALL.md#2-instalación-recomendada--cli-portable).
 
 ## Agentes
 
 | Agente | Rol |
 |--------|-----|
 | [@iatl](agents/iatl.md) | Orquestador, debate HITL, síntesis |
-| [@pfi-tl-peer-daniel](agents/pfi-tl-peer-daniel.md) | Par TL pre-HITL |
+| [@pfi-tl-peer-daniel-analisis](agents/pfi-tl-peer-daniel-analisis.md) | Par TL análisis pre-HITL |
+| [@pfi-tl-peer-daniel-implementacion](agents/pfi-tl-peer-daniel-implementacion.md) | Par TL implementación |
 | [@pfi-review-orchestrator](agents/pfi-review-orchestrator.md) | Review post-código |
 | [@pfi-cr-analyst](agents/pfi-cr-analyst.md) | Code review Claude |
 | [@pfi-patterns-advisor](agents/pfi-patterns-advisor.md) | Patrones (foco explícito) |
@@ -142,7 +116,8 @@ Ver [mongo/knowledge-sources.md](mongo/knowledge-sources.md).
 
 ## Índice
 
-- [CHANGELOG.md](CHANGELOG.md) — historial de versiones (v0.1.0 → v0.5.0)
+- [docs/INSTALL.md](docs/INSTALL.md) — **guía de instalación y publicación**
+- [CHANGELOG.md](CHANGELOG.md) — historial de versiones
 - [architecture/](architecture/) — visión, pipeline, feedback loop
 - [agents/](agents/) — definiciones agente (copia)
 - [skills/](skills/) — catálogo skills

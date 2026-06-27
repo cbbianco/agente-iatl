@@ -5,6 +5,21 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.11.0] — 2026-06-27
+
+**Tema:** Guía de instalación publicada + instalador copia skills completos.
+
+### Añadido
+
+- **`docs/INSTALL.md`** — guía paso a paso: requisitos, CLI, manual, Docker, MCP Jira, actualización, troubleshooting
+
+### Cambiado
+
+- **`README.md`** — enlace a guía de instalación; agentes Daniel split; versión 0.11.0
+- **`cli/lib/install-target.mjs`** — copia directorios skill completos (`pfi-iatl-developer-profile`, Daniel, etc.); `repoVersion` desde `package.json`
+
+---
+
 ## [0.10.0] — 2026-06-27
 
 **Tema:** Skills CR + overview Daniel split en diagrama.
