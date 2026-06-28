@@ -147,7 +147,7 @@ export async function getDb() {
   } catch (e) {}
 
   const project = config.project ?? "pfi-backend-core";
-  const normalizedProject = project.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  const normalizedProject = project.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "") || "default_project";
   const dbName = `iatl_knowledge_${normalizedProject}`;
 
   if (config.useLocalJsonDb) {

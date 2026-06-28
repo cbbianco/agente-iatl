@@ -281,7 +281,7 @@ async function main() {
   }
 
   // Generar configuraciones dinámicas y aisladas por proyecto para ChromaDB
-  const projectSlug = config.project.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  const projectSlug = config.project.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "") || "default_project";
   let hash = 0;
   for (let i = 0; i < config.project.length; i++) {
     hash = config.project.charCodeAt(i) + ((hash << 5) - hash);

@@ -22,7 +22,7 @@ function getChromaConfig() {
       if (config.chroma.collection) collection = config.chroma.collection;
     } else {
       // Generar dinámicamente si no está en config.json
-      const projectSlug = project.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+      const projectSlug = project.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "") || "default_project";
       let hash = 0;
       for (let i = 0; i < project.length; i++) {
         hash = project.charCodeAt(i) + ((hash << 5) - hash);
@@ -34,7 +34,7 @@ function getChromaConfig() {
     // Ignorar si falla lectura
   }
 
-  const projectSlug = project.toLowerCase().replace(/[^a-z0-9_]/g, "_");
+  const projectSlug = project.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, "") || "default_project";
   const persistPath = process.env.IATL_CHROMA_PATH ?? join(ROOT, `chroma-data-${projectSlug}`);
 
   return {
