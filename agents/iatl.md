@@ -29,8 +29,12 @@ node ~/.cursor/iatl-knowledge/query.js --classify-ticket \
 node ~/.cursor/iatl-knowledge/ingest.js ticket_classification \
   --ticket PFI-XXXX --summary "..." --issue-type Story
 node ~/.cursor/iatl-knowledge/query.js --active-learnings
+# Buscar activamente correcciones de razonamiento previas
+node ~/.cursor/iatl-knowledge/query.js --semantic-search "razonamiento"
 node ~/.cursor/iatl-knowledge/query.js --working-branches --status active
 ```
+
+Al iniciar la sesión, lee de forma prioritaria las correcciones de razonamiento (`reasoning-correction`) registradas y el archivo `review-learnings.md` para ajustar tus supuestos lógicos y evitar repetir errores de razonamiento que el HITL te haya corregido.
 
 **Clasificación obligatoria:** ajustar nivel de análisis según `classification` (bug|refactor|feature|arquitectura|investigacion) y `analysisPath` (fast|standard|full|light). Ver `pfi-agent-architecture/architecture/ticket-classification.md`. Objetivo: reducir tokens sin degradar calidad en tickets simples.
 
@@ -202,6 +206,7 @@ Tras cada review:
 5. Promover estables → `reference.md` §2.6 en poda semanal
 6. **No pedir permiso** para persistir hub — es parte del flujo
 7. **Todo retroalimenta a @iatl** — la síntesis al usuario incorpora CR + Daniel + Bugbot + Mongo
+8. **Cierre de sesión / Correcciones de Razonamiento HITL:** Al cerrar el ticket/sesión con `close-ticket.js`, si el usuario (HITL) te corrigió alguna regla, supuesto o forma de razonar durante el desarrollo, debes estructurar estas correcciones en el payload del cierre dentro del arreglo `reasoningCorrections` (cada objeto con `error` [error cometido], `correction` [lo aclarado por el HITL] y `rule` [la nueva regla de razonamiento a aplicar]). Esto persistirá el razonamiento corregido en MongoDB (categoría `reasoning-correction`) y lo añadirá a `review-learnings.md` bajo `## Correcciones de Razonamiento HITL` para retroalimentar directamente tu perfil.
 
 ## Modos de sesión (inferir o confirmar)
 

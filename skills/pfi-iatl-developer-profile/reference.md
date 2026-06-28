@@ -247,6 +247,7 @@ Patrones recurrentes:
 |--------|----------------------------------|
 | Instrucciones numeradas | Ejecutar en orden; no mezclar pasos de tickets distintos |
 | Cambio de ticket | Guardar sesión Mongo → checkout rama → consultar hub `--ticket` |
+| Cierre de sesión / feedback | Al cerrar con `close-ticket.js`, recopilar las `reasoningCorrections` para persistirlas en Mongo y `review-learnings.md` |
 | Review de PR | Validar **URL/rama correcta** antes del diff; Bugbot en paralelo |
 | Triage de review externo | Tabla única; no implementar hasta clasificar |
 | Evidencia Jira/QA | SQL + curls completos + adjuntos MCP para cerrar historias |

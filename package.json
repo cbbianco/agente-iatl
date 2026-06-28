@@ -11,6 +11,7 @@
   "scripts": {
     "install:iatl": "node cli/iatl-install.mjs",
     "install:iatl:quick": "node cli/iatl-install.mjs --non-interactive --runtime cursor",
+    "install:gui": "node cli/iatl-gui.mjs",
     "uninstall:iatl": "node cli/iatl-uninstall.mjs",
     "chroma:control": "node cli/chroma-control.mjs"
   },

@@ -6,14 +6,16 @@ Documentación de la arquitectura de agentes IATL para **pfi-backend-core**.
 
 ## Qué estamos construyendo
 
-Un sistema de agentes cooperativos para desarrollo spec-driven en PFI:
+Un sistema de agentes cooperativos y construcción autónoma para desarrollo spec-driven en PFI:
 
 1. **@iatl** — orquestador principal; única interfaz con el desarrollador (César).
 2. **@pfi-tl-peer-daniel-analisis** / **@pfi-tl-peer-daniel-implementacion** — par TL Daniel (análisis + implementación); debate Propuesta **antes** del gate HITL.
 3. **@pfi-review-orchestrator** — pipeline post-código (CR analyst + Bugbot).
 4. **Hub Mongo + Chroma local** — contexto operativo (Mongo) + recall semántico (Chroma v2.0).
+5. **Construcción Autónoma de Habilidades (MCP):** Generador autónomo de servidores MCP (Model Context Protocol) estándar e independientes (ej. `mcp-landing-page/`) para desacoplar el entorno y potenciar el runtime del agente.
+6. **Portal Gráfico de Instalación y Control:** Una SPA nativa basada en Node.js, SSE y estética *glassmorphic* para configurar el entorno y lanzar las compilaciones de forma visual.
 
-Objetivo: que @iatl **aprenda y mejore** con cada ciclo (Mongo + skills), con barra TL pragmática y estándar IATL hexagonal.
+Objetivo: que @iatl **aprenda y mejore** con cada ciclo (Mongo + skills + correcciones HITL), con barra TL pragmática y estándar IATL hexagonal.
 
 ## Mapa de ubicaciones
 
@@ -60,18 +62,27 @@ Ver [skills/pfi-ticket-source-resolver.md](skills/pfi-ticket-source-resolver.md)
 
 ## Instalación
 
-Guía completa paso a paso: **[docs/INSTALL.md](docs/INSTALL.md)** (requisitos, CLI, manual, Docker, verificación, troubleshooting).
+Guía completa paso a paso: **[docs/INSTALL.md](docs/INSTALL.md)** (requisitos, CLI, GUI, manual, Docker, verificación, troubleshooting).
 
-### Inicio rápido (Cursor)
+### Inicio rápido (Novedad: Portal GUI)
+
+Puedes instalar y configurar el entorno de forma completamente visual con nuestro nuevo portal web interactivo (diseño *glassmorphic* y logs en tiempo real):
 
 ```bash
 git clone https://github.com/cbbianco/agente-iatl.git pfi-agent-architecture
 cd pfi-agent-architecture && npm install
-npm run install:iatl
-# Mongo local :27017 + Chroma :8010 recomendados — ver guía
+npm run install:gui
 ```
 
-Runtimes: Cursor · VS Code · Claude Code · Antigravity · Docker — detalle en [docs/INSTALL.md](docs/INSTALL.md#2-instalación-recomendada--cli-portable).
+O si prefieres la versión de consola interactiva tradicional:
+
+```bash
+npm run install:iatl
+```
+
+*Nota: Se recomienda tener Mongo local (`:27017`) o configurado en tu `config.json` antes de iniciar.*
+
+Runtimes soportados: Cursor · VS Code · Claude Code · Antigravity · Docker — detalle en [docs/INSTALL.md](docs/INSTALL.md#2-instalación-recomendada--cli-portable).
 
 ## Agentes
 
@@ -118,6 +129,8 @@ Ver [mongo/knowledge-sources.md](mongo/knowledge-sources.md).
 
 - [docs/INSTALL.md](docs/INSTALL.md) — **guía de instalación y publicación**
 - [CHANGELOG.md](CHANGELOG.md) — historial de versiones
+- [cli/](cli/) — scripts de consola (CLI) e interfaz gráfica (GUI)
+- [mcp-landing-page/](mcp-landing-page/) — MCP autónomo generado para Landing Pages
 - [architecture/](architecture/) — visión, pipeline, feedback loop
 - [agents/](agents/) — definiciones agente (copia)
 - [skills/](skills/) — catálogo skills

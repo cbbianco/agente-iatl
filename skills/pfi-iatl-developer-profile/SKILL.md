@@ -101,6 +101,7 @@ Instrucciones típicas numeradas (`1) … 2) …`). El agente debe:
 3. **Alinear** feature + conflict develop + conflict qa por ticket al subir.
 4. **Contrastar reviews** externos vs evidencia repo → tabla única (falso positivo | aplicable | deuda preexistente | diferido). Ver `reference.md` §3.2.
 5. **Evidencias** para cerrar tickets: SQL de verificación, curls con body/validaciones, Jira adjuntos/comentarios (MCP).
+6. **Cierre de sesión y feedback:** Al cerrar el ticket/sesión con `close-ticket.js`, guardar en el payload `reasoningCorrections` toda corrección lógica o de supuesto que el HITL (usuario) te haya realizado (con `error`, `correction`, y `rule`). Al abrir una nueva sesión, leer activamente estas correcciones en el hub y en `review-learnings.md` para ajustar tu razonamiento y evitar repetir errores de lógica.
 
 Debatir (formato Propuesta/A favor/En contra/Alternativas/Recomendación/Tu decisión) antes de:
 

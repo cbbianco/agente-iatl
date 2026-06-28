@@ -75,4 +75,6 @@ Archivo vivo (vista humana). **Índice consultable:** `~/.cursor/iatl-knowledge/
 
 ---
 
+## Correcciones de Razonamiento HITL
+
 <!-- Nuevas entradas: categoría + YYYY-MM-DD + PFI-XXXX. @iatl podará semanalmente. -->

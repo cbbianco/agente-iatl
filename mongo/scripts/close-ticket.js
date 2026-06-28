@@ -19,7 +19,8 @@
  *   "endpoints": ["POST /marcaje-manual"]
  * }
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, appendFileSync } from "node:fs";
+import { join } from "node:path";
 import { getDb, closeDb } from "./lib/mongo.js";
 import { loadConfig, retentionExpiresAt } from "./lib/config.js";
 import {
@@ -83,6 +84,7 @@ async function main() {
     learnings: normalizedLearnings.map((l) =>
       l.trace ? { text: l.text, trace: l.trace } : l.text,
     ),
+    reasoningCorrections: payload.reasoningCorrections ?? [],
     resumeContext,
     closedAt,
     expiresAt,
@@ -123,6 +125,52 @@ async function main() {
     });
   }
 
+  const reasoningCorrections = payload.reasoningCorrections ?? [];
+  if (reasoningCorrections.length > 0) {
+    for (const rc of reasoningCorrections) {
+      const rcText = `[Razonamiento] Error inicial: "${rc.error}" | Corrección HITL: "${rc.correction}" | Regla operativa: "${rc.rule}"`;
+      await db.collection("learnings").insertOne({
+        ticket,
+        project: config.project,
+        sprintLabel: config.sprintLabel,
+        category: "reasoning-correction",
+        text: rcText,
+        trace: null,
+        hasTrace: false,
+        isResumeTrace: false,
+        status: "active",
+        source: "hitl-close",
+        expiresAt,
+        createdAt: closedAt,
+        updatedAt: closedAt,
+      });
+    }
+
+    if (config.projectRoot) {
+      const learningsFilePath = join(config.projectRoot, "skills/pfi-iatl-developer-profile/review-learnings.md");
+      if (existsSync(learningsFilePath)) {
+        let content = readFileSync(learningsFilePath, "utf8");
+        const dateStr = closedAt.toISOString().slice(0, 10);
+        let appendText = `\n## Correcciones de Razonamiento HITL (${ticket} - ${dateStr})\n\n`;
+        for (const rc of reasoningCorrections) {
+          appendText += `- **Error de razonamiento:** ${rc.error}\n`;
+          appendText += `  **Corrección del HITL:** ${rc.correction}\n`;
+          appendText += `  **Nueva regla operativa:** ${rc.rule}\n`;
+        }
+        
+        const commentIndicator = "<!-- Nuevas entradas:";
+        if (content.includes(commentIndicator)) {
+          const parts = content.split(commentIndicator);
+          content = parts[0] + appendText + "\n" + commentIndicator + parts[1];
+          writeFileSync(learningsFilePath, content, "utf8");
+        } else {
+          appendFileSync(learningsFilePath, "\n" + appendText, "utf8");
+        }
+        console.warn(`📝 review-learnings.md actualizado con ${reasoningCorrections.length} corrección(es) de razonamiento.`);
+      }
+    }
+  }
+
   for (const b of payload.branches ?? []) {
     if (!b.branch) continue;
     await db.collection("working_branches").updateOne(
@@ -155,6 +203,7 @@ async function main() {
         sprintLabel: config.sprintLabel,
         expiresAt: expiresAt.toISOString(),
         learningsStored: learnings.length,
+        reasoningCorrectionsStored: reasoningCorrections.length,
         resumeTraceStored: Boolean(resumeContext),
         branchesUpdated: (payload.branches ?? []).length,
       },

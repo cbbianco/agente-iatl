@@ -183,13 +183,33 @@ El **último** learning del cierre puede incluir análisis trazado — cómo lle
 ]
 ```
 
+### Correcciones de Razonamiento HITL
+
+El payload JSON soporta una lista `reasoningCorrections` para guardar retroalimentación de lógica:
+
+```json
+{
+  "verdict": "closed_implementation",
+  "summary": "...",
+  "reasoningCorrections": [
+    {
+      "error": "Error de supuesto inicial sobre el flujo de dependencias en módulo X",
+      "correction": "El HITL aclaró que X debe depender de Y e inyectarse vía DIP",
+      "rule": "Inyectar Y en X a nivel de constructor, nunca instanciar directamente"
+    }
+  ]
+}
+```
+
+Al procesarse, `close-ticket.js` las inserta en MongoDB (colección `learnings`, categoría `reasoning-correction`) y las añade al final de `review-learnings.md` bajo el encabezado `## Correcciones de Razonamiento HITL`.
+
 ```bash
 node close-ticket.js --ticket PFI-XXXX --payload-file /tmp/closure.json
 node query.js --ticket PFI-XXXX          # session_context.resume_context
 node query.js --ticket-closure --ticket PFI-XXXX
 ```
 
-**Al retomar sesión:** `query.js --ticket` → leer `session_context.resume_context` **antes** de reconstruir desde el chat. Usar `trace.howWeGotHere`, `actualFinding` y `operationalRule` como contexto para nuevos análisis/QA.
+**Al retomar sesión:** `query.js --ticket` → leer `session_context.resume_context` y las active learnings de tipo `reasoning-correction` **antes** de reconstruir desde el chat. Usar `trace` y `reasoning-correction` como contexto prioritario para nuevos análisis/QA.
 
 ## Poda
 
