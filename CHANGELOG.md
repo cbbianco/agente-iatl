@@ -5,6 +5,27 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.12.0] — 2026-06-28
+
+**Tema:** Interfaz gráfica GUI (local web portal) + construcción autónoma MCP + retroalimentación de razonamiento HITL.
+
+### Añadido
+
+- **`cli/iatl-gui.mjs`** — portal gráfico web local con Server-Sent Events (SSE) y diseño *glassmorphic* en el puerto 8020
+- **`cli/lib/build-landing-page.mjs`** — orquestador y generador autónomo del servidor MCP para Landing Pages
+- **`mcp-landing-page/`** — servidor MCP y assets estéticos de Landing Pages generados de forma autónoma
+- Soporte para **`reasoningCorrections`** (corrección de razonamiento HITL) al cerrar el ticket (`close-ticket.js`), guardándolos en MongoDB (categoría `reasoning-correction`) y en `review-learnings.md`
+
+### Cambiado
+
+- **`package.json`** — script `install:gui` para iniciar el portal web
+- **`cli/iatl-install.mjs`** — soporte para flujo no interactivo (`--build landing-page`) y menú de categorías (Instalación vs Construcción)
+- **`mongo/scripts/close-ticket.js`** — integración de la escritura automática de `reasoningCorrections` a base de datos y al archivo `review-learnings.md`
+- **`agents/iatl.md`** y **`skills/`** — actualización del arranque de sesión para leer correcciones de razonamiento activas y cargarlas en contexto
+- **`README.md`** — documentación completa de la GUI, el flujo de construcción de habilidades MCP y el índice del repositorio
+
+---
+
 ## [0.11.0] — 2026-06-27
 
 **Tema:** Guía de instalación publicada + instalador copia skills completos.
