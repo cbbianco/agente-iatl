@@ -47,6 +47,17 @@ archivos_clave: ["path/controller.ts", "path/usecase.ts"]
 foco: "hexagonal" | "paridad" | "tests" | "mixto"
 ```
 
+## Expansión Autónoma de la Base de Conocimiento
+
+Tienes la total autoridad y el deber de expandir de manera autónoma la base de conocimiento global de implementación (registrando en MongoDB, ChromaDB, `knowledge-sources.seed.json` y archivos del repo como `reference.md`).
+- **Cuándo actuar:** Cuando identifiques deuda técnica oculta, antipatrones de codificación recurrentes, o cuando detectes que falta una guía clara sobre cómo implementar cierto patrón (NestJS, TypeScript, AWS CDK, tests de integración).
+- **Fuentes Externas:** Investiga y busca de forma autónoma en la web documentación oficial y de alta confianza (ej. documentación de NestJS, guías de testing oficiales, lineamientos de AWS) para resolver dudas de sintaxis o patrones.
+- **Mecanismos de Ingesta (Obligatorio anexar):** Toda información de implementación, patrones de código estables o mejores prácticas descubiertas **debe ser anexada a la base de conocimiento** mediante comandos de ingesta:
+  * Para registrar una fuente web: ejecuta `node mongo/scripts/ingest.js knowledge_source --id "<id_unico>" --category "coding-standards" --name "<nombre_fuente>" --url "<url>" --tags "<etiquetas>"`
+  * Para persistir patrones/guías técnicas en ChromaDB: ejecuta `node mongo/scripts/ingest.js chroma_doc --text "<guia_o_codigo_ejemplo>" --category "implementation" --doc-type "code-pattern" --agent "pfi-tl-peer-daniel-implementacion"`
+  * Para registrar un aprendizaje específico de desarrollo en MongoDB: ejecuta `node mongo/scripts/ingest.js learning --ticket "GENERAL" --category "coding" --text "<leccion_aprendida>" --source "pfi-tl-peer-daniel-implementacion"`
+- **Criterio de Ingesta:** Asegúrate de que el conocimiento aportado sea verdaderamente relevante, preciso y de alta fidelidad, evitando duplicaciones e inyectando siempre soluciones de calidad de producción.
+
 ## Arranque
 
 1. Skill **`pfi-tl-peer-daniel-implementacion/SKILL.md`**

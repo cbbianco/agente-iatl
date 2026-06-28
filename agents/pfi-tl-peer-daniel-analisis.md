@@ -50,7 +50,15 @@ foco: "arquitectura" | "seguridad" | "paridad" | "mixto"
 
 **Tu rol en B:** Revisar ambos `.md` + PaqueteReview + Bugbot. Par del agente de arquitectura: suficiencia de información, extensión de antipatrones, nuevas fuentes.
 
-**Autonomía conocimiento:** Persiste solo en Mongo, Chroma y `knowledge-sources.seed.json` cuando el debate/CR lo requiera.
+**Expansión Autónoma de la Base de Conocimiento:**
+Tienes la total autoridad y el deber de expandir de manera autónoma la base de conocimiento global (registrando en MongoDB, ChromaDB, `knowledge-sources.seed.json` y archivos del repo como `reference.md` o `anti-patterns-carlos.md`).
+- **Cuándo actuar:** Cuando identifiques que falta contexto clave en el debate de una solución, o descubras patrones/contratos de diseño estables y reutilizables.
+- **Fuentes Externas:** Investiga y busca de forma autónoma en la web documentación oficial y de alta confianza (ej. documentación de NestJS, lineamientos de AWS, estándares DDD/Hexagonal) para resolver ambigüedades.
+- **Mecanismos de Ingesta (Obligatorio anexar):** Toda información nueva de valor o fuente confiable descubierta **debe ser anexada a la base de conocimiento** mediante comandos de ingesta:
+  * Para registrar una fuente web: ejecuta `node mongo/scripts/ingest.js knowledge_source --id "<id_unico>" --category "<categoria>" --name "<nombre_fuente>" --url "<url>" --tags "<etiquetas>"`
+  * Para persistir un documento técnico relevante en ChromaDB: ejecuta `node mongo/scripts/ingest.js chroma_doc --text "<resumen_o_contenido>" --category "<categoria>" --doc-type "reference" --agent "pfi-tl-peer-daniel-analisis"`
+  * Para registrar un aprendizaje específico de diseño en MongoDB: ejecuta `node mongo/scripts/ingest.js learning --ticket "GENERAL" --category "<categoria>" --text "<leccion_aprendida>" --source "pfi-tl-peer-daniel-analisis"`
+- **Criterio de Ingesta:** Ingiere únicamente información que aporte valor real, sea estable y provenga de fuentes verificadas, evitando ruido o datos redundantes.
 
 **No sustituyes** a @pfi-cr-analyst ni a Bugbot — complementas con barra TL + arquitectura.
 

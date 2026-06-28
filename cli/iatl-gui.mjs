@@ -469,6 +469,94 @@ const htmlTemplate = `<!DOCTYPE html>
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* Wizard Styles */
+    .wizard-progress {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 25px;
+      position: relative;
+    }
+    .wizard-progress::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--border);
+      z-index: 1;
+      transform: translateY(-50%);
+    }
+    .wizard-progress-bar {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      height: 2px;
+      background: var(--primary);
+      z-index: 1;
+      transform: translateY(-50%);
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    .wizard-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--card-bg);
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: bold;
+      z-index: 2;
+      transition: var(--transition);
+      color: var(--text-muted);
+    }
+    .wizard-dot.active {
+      border-color: var(--primary);
+      background: var(--primary-glow);
+      color: #ffffff;
+    }
+    .wizard-dot.completed {
+      border-color: var(--success);
+      background: var(--success);
+      color: #ffffff;
+    }
+    .wizard-step {
+      display: none;
+      animation: fadeIn 0.4s ease-out;
+    }
+    .wizard-step.active {
+      display: block;
+    }
+    .wizard-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 25px;
+    }
+    .btn-wizard {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+    }
+    .btn-wizard:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .btn-wizard-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+    .btn-wizard-primary:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -605,22 +693,87 @@ const htmlTemplate = `<!DOCTYPE html>
         <div class="panel">
           <h2 class="panel-title">Construcción Autónoma de Habilidades</h2>
           
-          <div class="card-construct-option selected">
-            <div class="runtime-icon">📄</div>
-            <div class="construct-info">
-              <h3>landing-page</h3>
-              <p>Construye un servidor de protocolo de contexto de modelo (MCP) local con assets premium de diseño (HTML/CSS) dinámicos para construir landings de alto impacto.</p>
+          <div class="wizard-progress">
+            <div class="wizard-progress-bar" id="wizard-progress-bar"></div>
+            <div class="wizard-dot active" id="dot-1">1</div>
+            <div class="wizard-dot" id="dot-2">2</div>
+            <div class="wizard-dot" id="dot-3">3</div>
+          </div>
+
+          <form id="wizard-form" onsubmit="event.preventDefault();">
+            <!-- STEP 1: Detalles de la página -->
+            <div class="wizard-step active" id="step-1">
+              <h3 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 1: Información de la Landing</h3>
+              <div class="form-group">
+                <label class="form-label" for="buildPageContext">Contexto de la Página</label>
+                <textarea class="form-control" id="buildPageContext" rows="3" placeholder="Describe el propósito de la página, ej: SaaS para optimizar flujos de trabajo usando IA"></textarea>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="buildPageTitle">Título de la Página</label>
+                <input type="text" class="form-control" id="buildPageTitle" value="WorkFlowAI" placeholder="ej. WorkFlowAI">
+              </div>
             </div>
-          </div>
 
-          <div class="form-group">
-            <label class="form-label">Habilidad Seleccionada</label>
-            <input type="text" class="form-control" value="landing-page" readonly>
-          </div>
+            <!-- STEP 2: Selección de Assets -->
+            <div class="wizard-step" id="step-2">
+              <h3 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 2: Selección de Assets</h3>
+              <div class="form-group">
+                <label class="form-label">Estilo y HTML de base</label>
+                <div class="checkbox-group" style="margin-bottom: 15px;">
+                  <input type="radio" name="assetOption" id="assetGenerate" value="generate" checked onchange="toggleCustomAssetField()">
+                  <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="assetGenerate">Generar asset apropiado al desarrollo (Autónomo)</label>
+                </div>
+                <div class="checkbox-group">
+                  <input type="radio" name="assetOption" id="assetCustom" value="custom" onchange="toggleCustomAssetField()">
+                  <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="assetCustom">Usar un asset de estilos/HTML específico</label>
+                </div>
+              </div>
+              <div class="form-group" id="custom-asset-path-group" style="display: none;">
+                <label class="form-label" for="customAssetPath">Ruta del Asset Específico</label>
+                <input type="text" class="form-control" id="customAssetPath" placeholder="ej. mcp-landing-page/assets/custom-styles.css">
+              </div>
+            </div>
 
-          <button class="btn-action" id="btn-build" onclick="startBuild()">
-            <span>🏗️</span> Construir MCP de Landing-Page
-          </button>
+            <!-- STEP 3: Publicación -->
+            <div class="wizard-step" id="step-3">
+              <h3 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 3: Publicación Autónoma</h3>
+              <div class="form-group">
+                <label class="form-label">¿Deseas publicar la página de forma autónoma?</label>
+                <div class="checkbox-group" style="margin-bottom: 10px;">
+                  <input type="radio" name="publishOption" id="publishNone" value="none" checked onchange="togglePublishFields()">
+                  <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="publishNone">Solo construir localmente</label>
+                </div>
+                <div class="checkbox-group" style="margin-bottom: 10px;">
+                  <input type="radio" name="publishOption" id="publishGithub" value="github" onchange="togglePublishFields()">
+                  <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="publishGithub">Publicar en GitHub Pages</label>
+                </div>
+                <div class="checkbox-group">
+                  <input type="radio" name="publishOption" id="publishGitlab" value="gitlab" onchange="togglePublishFields()">
+                  <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="publishGitlab">Publicar en GitLab Pages</label>
+                </div>
+              </div>
+
+              <div id="publish-fields" style="display: none;">
+                <div class="form-group">
+                  <label class="form-label" for="publishRepo">Repositorio (ej: username/repo-name)</label>
+                  <input type="text" class="form-control" id="publishRepo" placeholder="ej. cbbianco/agente-iatl">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="publishBranch">Rama de publicación</label>
+                  <input type="text" class="form-control" id="publishBranch" value="gh-pages" placeholder="ej. gh-pages">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="publishToken">Personal Access Token (PAT) / Credenciales</label>
+                  <input type="password" class="form-control" id="publishToken" placeholder="Token de acceso para realizar push autónomo">
+                </div>
+              </div>
+            </div>
+          </form>
+
+          <div class="wizard-buttons">
+            <button class="btn-wizard" id="btn-wizard-prev" onclick="wizardPrev()" disabled>Anterior</button>
+            <button class="btn-wizard btn-wizard-primary" id="btn-wizard-next" onclick="wizardNext()">Siguiente</button>
+          </div>
         </div>
       </div>
     </div>
@@ -761,6 +914,69 @@ const htmlTemplate = `<!DOCTYPE html>
       };
     }
 
+    let wizardStep = 1;
+    const totalSteps = 3;
+
+    function updateWizardUI() {
+      // Ocultar todos los pasos
+      for (let i = 1; i <= totalSteps; i++) {
+        const step = document.getElementById('step-' + i);
+        const dot = document.getElementById('dot-' + i);
+        if (step) step.classList.remove('active');
+        if (dot) {
+          dot.classList.remove('active', 'completed');
+          if (i < wizardStep) dot.classList.add('completed');
+          else if (i === wizardStep) dot.classList.add('active');
+        }
+      }
+
+      // Mostrar paso actual
+      const currentStep = document.getElementById('step-' + wizardStep);
+      if (currentStep) currentStep.classList.add('active');
+
+      // Actualizar ancho de barra de progreso
+      const progressPercent = ((wizardStep - 1) / (totalSteps - 1)) * 100;
+      document.getElementById('wizard-progress-bar').style.width = progressPercent + '%';
+
+      // Actualizar botones
+      document.getElementById('btn-wizard-prev').disabled = wizardStep === 1;
+      
+      const nextBtn = document.getElementById('btn-wizard-next');
+      if (wizardStep === totalSteps) {
+        nextBtn.innerHTML = '<span>🏗️</span> Construir MCP';
+        nextBtn.classList.add('btn-wizard-primary');
+      } else {
+        nextBtn.innerHTML = 'Siguiente';
+        nextBtn.classList.remove('btn-wizard-primary');
+      }
+    }
+
+    function wizardNext() {
+      if (wizardStep < totalSteps) {
+        wizardStep++;
+        updateWizardUI();
+      } else {
+        startBuild();
+      }
+    }
+
+    function wizardPrev() {
+      if (wizardStep > 1) {
+        wizardStep--;
+        updateWizardUI();
+      }
+    }
+
+    function toggleCustomAssetField() {
+      const isCustom = document.getElementById('assetCustom').checked;
+      document.getElementById('custom-asset-path-group').style.display = isCustom ? 'block' : 'none';
+    }
+
+    function togglePublishFields() {
+      const isNone = document.getElementById('publishNone').checked;
+      document.getElementById('publish-fields').style.display = isNone ? 'none' : 'block';
+    }
+
     function startBuild() {
       if (eventSource) {
         eventSource.close();
@@ -768,11 +984,33 @@ const htmlTemplate = `<!DOCTYPE html>
 
       clearTerminal();
       document.getElementById('btn-install').disabled = true;
-      document.getElementById('btn-build').disabled = true;
+      document.getElementById('btn-wizard-prev').disabled = true;
+      document.getElementById('btn-wizard-next').disabled = true;
 
-      writeTerminalLine('$ iatl-install --build landing-page', 'line-cmd');
+      const pageContext = document.getElementById('buildPageContext').value;
+      const pageTitle = document.getElementById('buildPageTitle').value;
+      const assetOption = document.querySelector('input[name="assetOption"]:checked').value;
+      const customAssetPath = document.getElementById('customAssetPath').value;
+      const publishOption = document.querySelector('input[name="publishOption"]:checked').value;
+      const publishRepo = document.getElementById('publishRepo').value;
+      const publishBranch = document.getElementById('publishBranch').value;
+      const publishToken = document.getElementById('publishToken').value;
 
-      eventSource = new EventSource('/api/run-build?type=landing-page');
+      writeTerminalLine('$ iatl-install --build landing-page --page-title "' + pageTitle + '"...', 'line-cmd');
+
+      const params = new URLSearchParams({
+        type: 'landing-page',
+        pageContext,
+        pageTitle,
+        assetOption,
+        customAssetPath,
+        publishOption,
+        publishRepo,
+        publishBranch,
+        publishToken
+      });
+
+      eventSource = new EventSource('/api/run-build?' + params.toString());
 
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -784,12 +1022,14 @@ const htmlTemplate = `<!DOCTYPE html>
           writeTerminalLine('\\n[Construcción del MCP de Landing Pages completada con éxito]', 'line-success');
           eventSource.close();
           document.getElementById('btn-install').disabled = false;
-          document.getElementById('btn-build').disabled = false;
+          document.getElementById('btn-wizard-prev').disabled = false;
+          document.getElementById('btn-wizard-next').disabled = false;
         } else if (data.type === 'error') {
           writeTerminalLine('\\n[Error de ejecución]: ' + data.message, 'line-stderr');
           eventSource.close();
           document.getElementById('btn-install').disabled = false;
-          document.getElementById('btn-build').disabled = false;
+          document.getElementById('btn-wizard-prev').disabled = false;
+          document.getElementById('btn-wizard-next').disabled = false;
         }
       };
 
@@ -797,7 +1037,8 @@ const htmlTemplate = `<!DOCTYPE html>
         writeTerminalLine('\\n[Conexión SSE cerrada o con error]', 'line-stderr');
         eventSource.close();
         document.getElementById('btn-install').disabled = false;
-        document.getElementById('btn-build').disabled = false;
+        document.getElementById('btn-wizard-prev').disabled = false;
+        document.getElementById('btn-wizard-next').disabled = false;
       };
     }
   </script>
@@ -839,6 +1080,24 @@ const server = createServer((req, res) => {
     if (url.pathname === "/api/run-build") {
       const type = url.searchParams.get("type") || "landing-page";
       args = ["cli/iatl-install.mjs", "--non-interactive", "--build", type];
+
+      const pageContext = url.searchParams.get("pageContext");
+      const pageTitle = url.searchParams.get("pageTitle");
+      const assetOption = url.searchParams.get("assetOption");
+      const customAssetPath = url.searchParams.get("customAssetPath");
+      const publishOption = url.searchParams.get("publishOption");
+      const publishRepo = url.searchParams.get("publishRepo");
+      const publishBranch = url.searchParams.get("publishBranch");
+      const publishToken = url.searchParams.get("publishToken");
+
+      if (pageContext) args.push("--page-context", pageContext);
+      if (pageTitle) args.push("--page-title", pageTitle);
+      if (assetOption) args.push("--asset-option", assetOption);
+      if (customAssetPath) args.push("--custom-asset-path", customAssetPath);
+      if (publishOption) args.push("--publish-option", publishOption);
+      if (publishRepo) args.push("--publish-repo", publishRepo);
+      if (publishBranch) args.push("--publish-branch", publishBranch);
+      if (publishToken) args.push("--publish-token", publishToken);
     } else {
       const runtime = url.searchParams.get("runtime") || "cursor";
       const project = url.searchParams.get("project") || "pfi-backend-core";

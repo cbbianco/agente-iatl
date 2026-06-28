@@ -40,6 +40,14 @@ function parseArgs(argv) {
     else if (a === "--claude-code") out.claudeCode = true;
     else if (a === "--no-claude-code") out.claudeCode = false;
     else if (a === "--build" && argv[i + 1] !== undefined) out.build = argv[++i];
+    else if (a === "--page-context" && argv[i + 1] !== undefined) out.pageContext = argv[++i];
+    else if (a === "--page-title" && argv[i + 1] !== undefined) out.pageTitle = argv[++i];
+    else if (a === "--asset-option" && argv[i + 1] !== undefined) out.assetOption = argv[++i];
+    else if (a === "--custom-asset-path" && argv[i + 1] !== undefined) out.customAssetPath = argv[++i];
+    else if (a === "--publish-option" && argv[i + 1] !== undefined) out.publishOption = argv[++i];
+    else if (a === "--publish-repo" && argv[i + 1] !== undefined) out.publishRepo = argv[++i];
+    else if (a === "--publish-branch" && argv[i + 1] !== undefined) out.publishBranch = argv[++i];
+    else if (a === "--publish-token" && argv[i + 1] !== undefined) out.publishToken = argv[++i];
   }
   return out;
 }
@@ -80,7 +88,16 @@ async function main() {
   console.log(`Repo arquitectura: ${getRepoRoot()}\n`);
 
   if (args.build === "landing-page") {
-    await buildLandingPageMcp();
+    await buildLandingPageMcp({
+      pageContext: args.pageContext,
+      pageTitle: args.pageTitle,
+      assetOption: args.assetOption,
+      customAssetPath: args.customAssetPath,
+      publishOption: args.publishOption,
+      publishRepo: args.publishRepo,
+      publishBranch: args.publishBranch,
+      publishToken: args.publishToken
+    });
     return;
   }
 
@@ -127,8 +144,47 @@ async function main() {
       ];
       const selectedBuild = await askChoice(rl, "Elige una opción de construcción", buildChoices, "landing-page");
       if (selectedBuild === "landing-page") {
+        console.log("\n--- Configuración de la Landing Page ---");
+        const pageContext = await ask(rl, "a) Describe el contexto de la página (ej. SaaS de workflows con IA)", "SaaS de workflows con IA");
+        const pageTitle = await ask(rl, "b) Título de la página", "WorkFlowAI");
+        
+        const assetChoices = [
+          { value: "generate", label: "Generar asset apropiado al desarrollo (Autónomo)" },
+          { value: "custom", label: "Usar un asset de estilos/HTML específico" }
+        ];
+        const assetOption = await askChoice(rl, "c) Selección de assets", assetChoices, "generate");
+        let customAssetPath = "";
+        if (assetOption === "custom") {
+          customAssetPath = await ask(rl, "Indique la ruta del archivo de estilos o HTML", "styles.css");
+        }
+
+        const publishChoices = [
+          { value: "none", label: "No publicar (Solo construir localmente)" },
+          { value: "github", label: "Publicar en GitHub Pages" },
+          { value: "gitlab", label: "Publicar en GitLab Pages" }
+        ];
+        const publishOption = await askChoice(rl, "e) Opción de publicación autónoma", publishChoices, "none");
+        let publishRepo = "";
+        let publishBranch = "";
+        let publishToken = "";
+
+        if (publishOption !== "none") {
+          publishRepo = await ask(rl, "Repositorio objetivo (ej. username/repo-name)", "username/repo-name");
+          publishBranch = await ask(rl, "Rama de publicación", "gh-pages");
+          publishToken = await ask(rl, "Token de acceso / credenciales", "");
+        }
+        
         await rl.close();
-        await buildLandingPageMcp();
+        await buildLandingPageMcp({
+          pageContext,
+          pageTitle,
+          assetOption,
+          customAssetPath,
+          publishOption,
+          publishRepo,
+          publishBranch,
+          publishToken
+        });
         return;
       }
     }

@@ -1,11 +1,22 @@
 #!/usr/bin/env node
 import { createInterface } from "readline";
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Cargar configuración de compilación y publicación
+let config = {};
+try {
+  const configPath = join(__dirname, "config.json");
+  if (existsSync(configPath)) {
+    config = JSON.parse(readFileSync(configPath, "utf8"));
+  }
+} catch (e) {
+  // ignore
+}
 
 const rl = createInterface({
   input: process.stdin,
@@ -259,11 +270,35 @@ function handleRequest(req) {
 
         writeFileSync(targetPath, html, "utf8");
 
+        let deployMsg = "";
+        if (config.publishOption && config.publishOption !== "none") {
+          try {
+            const gitDir = dirname(targetPath);
+            const { execSync } = await import("child_process");
+            if (!existsSync(join(gitDir, ".git"))) {
+              execSync("git init", { cwd: gitDir });
+            }
+            execSync("git add .", { cwd: gitDir });
+            const status = execSync("git status --porcelain", { cwd: gitDir }).toString().trim();
+            if (status) {
+              execSync('git commit -m "Deploy landing page to pages"', { cwd: gitDir });
+            }
+            const remoteUrl = config.publishOption === "github" 
+              ? `https://${config.publishToken}@github.com/${config.publishRepo}.git`
+              : `https://oauth2:${config.publishToken}@gitlab.com/${config.publishRepo}.git`;
+            
+            execSync(`git push -f ${remoteUrl} master:${config.publishBranch || 'gh-pages'}`, { cwd: gitDir });
+            deployMsg = `\n🚀 ¡Publicado autónomamente en ${config.publishOption === "github" ? "GitHub Pages" : "GitLab Pages"} (rama sol${config.publishBranch || 'gh-pages'})!`;
+          } catch (deployErr) {
+            deployMsg = `\n⚠️ Error en publicación autónoma: ${deployErr.message}`;
+          }
+        }
+
         return sendResponse(id, {
           content: [
             {
               type: "text",
-              text: `¡Landing Page construida exitosamente!\nRuta: ${targetPath}\nTema: ${theme}\nColores: ${primaryColor} -> ${secondaryColor}\nFeatures: ${features.length || 3}\nTestimonios: ${testimonials.length || 2}`
+              text: `¡Landing Page construida exitosamente!\nRuta: ${targetPath}\nTema: ${theme}\nColores: ${primaryColor} -> ${secondaryColor}\nFeatures: ${features.length || 3}\nTestimonios: sol${testimonials.length || 2}${deployMsg}`
             }
           ]
         });
