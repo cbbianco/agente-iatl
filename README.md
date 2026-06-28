@@ -4,18 +4,20 @@ Documentación de la arquitectura de agentes IATL para **pfi-backend-core**.
 
 > **Importante:** Esta carpeta es una **copia de referencia** en el repo. Los artefactos operativos viven en `~/.cursor/` del desarrollador. No mover ni duplicar la fuente de verdad desde aquí salvo para documentar o versionar decisiones de diseño.
 
-## Qué estamos construyendo
+## ¿Qué es IATL? (Inteligencia Artificial In the Loop)
 
-Un sistema de agentes cooperativos y construcción autónoma para desarrollo spec-driven en PFI:
+**IATL (Ingeniero Artificial Team Lead)** no es simplemente otro chatbot o copiloto interactivo de programación. Es un **paradigma de Ingeniería de Software colaborativo basado en el concepto de "Inteligencia Artificial In the Loop" (IAIL)**.
 
-1. **@iatl** — orquestador principal; única interfaz con el desarrollador (César).
-2. **@pfi-tl-peer-daniel-analisis** / **@pfi-tl-peer-daniel-implementacion** — par TL Daniel (análisis + implementación); debate Propuesta **antes** del gate HITL.
-3. **@pfi-review-orchestrator** — pipeline post-código (CR analyst + Bugbot).
-4. **Hub Mongo + Chroma local** — contexto operativo (Mongo) + recall semántico (Chroma v2.0).
-5. **Construcción Autónoma de Habilidades (MCP):** Generador autónomo de servidores MCP (Model Context Protocol) estándar e independientes (ej. `mcp-landing-page/`) para desacoplar el entorno y potenciar el runtime del agente.
-6. **Portal Gráfico de Instalación y Control:** Una SPA nativa basada en Node.js, SSE y estética *glassmorphic* para configurar el entorno y lanzar las compilaciones de forma visual.
+A diferencia del enfoque tradicional de *Human-in-the-Loop* (donde la IA maneja el desarrollo y el humano solo valida de forma pasiva), en IATL **el desarrollador humano es el eje central y conductor creativo**, mientras que una red jerárquica de agentes especializados de IA se integra de forma activa en el flujo de trabajo en momentos clave (quality gates) para asegurar la excelencia del código, validar la arquitectura, evitar antipatrones y autogenerar herramientas complementarias.
 
-Objetivo: que @iatl **aprenda y mejore** con cada ciclo (Mongo + skills + correcciones HITL), con barra TL pragmática y estándar IATL hexagonal.
+### Componentes de la Arquitectura IAIL
+
+1. **@iatl (Orquestador Principal)**: Tu único punto de contacto interactivo. Coordina la ejecución de cambios, recopila contexto y se adapta a tus directrices mediante un ciclo continuo de retroalimentación de razonamiento.
+2. **@pfi-tl-peer-daniel (Gates de Calidad y Debate)**: Dividido en **@pfi-tl-peer-daniel-analisis** (fase pre-código) y **@pfi-tl-peer-daniel-implementacion** (fase post-código). Actúa como tu par revisor de arquitectura (basado en estándares DDD, hexagonal y testing) que debate la solución propuesta y tiene la autonomía de auto-expandir su base de conocimiento local consumiendo documentación confiable de internet.
+3. **@pfi-review-orchestrator**: El orquestador que gestiona el pipeline de revisiones automáticas (Code Reviewer y Bugbot).
+4. **Hub de Conocimiento Local (MongoDB + ChromaDB)**: Memoria operativa y semántica a largo plazo que retiene las decisiones de sprints anteriores y tus correcciones lógicas para mejorar la precisión del modelo en la siguiente sesión.
+5. **Construcción Autónoma de Habilidades (MCP)**: Generador autónomo de herramientas independientes bajo el estándar Model Context Protocol (como el MCP de Landing Pages), permitiendo que el sistema expanda dinámicamente sus capacidades lógicas y de despliegue.
+6. **Portal de Control Visual (GUI Wizard)**: Una interfaz moderna basada en Node.js, SSE y variables glassmorphism para parametrizar el entorno e interactuar visualmente con las construcciones del sistema.
 
 ## Mapa de ubicaciones
 
