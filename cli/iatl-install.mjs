@@ -17,6 +17,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { RUNTIME_CHOICES } from "./lib/paths.mjs";
 import { getRepoRoot, installArtifacts, runHubSetup, writeIDEProjectHints } from "./lib/install-target.mjs";
+import { buildLandingPageMcp } from "./lib/build-landing-page.mjs";
 
 function parseArgs(argv) {
   const out = { nonInteractive: false };
@@ -38,6 +39,7 @@ function parseArgs(argv) {
     else if (a === "--skip-hub-setup") out.skipHubSetup = true;
     else if (a === "--claude-code") out.claudeCode = true;
     else if (a === "--no-claude-code") out.claudeCode = false;
+    else if (a === "--build" && argv[i + 1] !== undefined) out.build = argv[++i];
   }
   return out;
 }
@@ -77,6 +79,11 @@ async function main() {
   console.log("╚══════════════════════════════════════════════════╝\n");
   console.log(`Repo arquitectura: ${getRepoRoot()}\n`);
 
+  if (args.build === "landing-page") {
+    await buildLandingPageMcp();
+    return;
+  }
+
   let runtime = args.runtime;
   let claudeCode = args.claudeCode;
   let config = {
@@ -107,7 +114,26 @@ async function main() {
   } else {
     const rl = createInterface({ input, output });
 
-    console.log("--- ¿Dónde vas a correr IATL? ---\n");
+    // --- MENÚ DE CATEGORÍAS PRINCIPALES ---
+    const mainChoices = [
+      { value: "install", label: "Gestión y Configuración del Entorno (función actual)" },
+      { value: "build", label: "Construir (Habilidades de generación autónoma)" }
+    ];
+    const category = await askChoice(rl, "Elige una categoría de ejecución", mainChoices, "install");
+
+    if (category === "build") {
+      const buildChoices = [
+        { value: "landing-page", label: "landing-page (Construir de forma autónoma un MCP que conecta assets propios para esa construcción)" }
+      ];
+      const selectedBuild = await askChoice(rl, "Elige una opción de construcción", buildChoices, "landing-page");
+      if (selectedBuild === "landing-page") {
+        await rl.close();
+        await buildLandingPageMcp();
+        return;
+      }
+    }
+
+    console.log("\n--- ¿Dónde vas a correr IATL? ---\n");
     runtime = await askChoice(rl, "Runtime objetivo", RUNTIME_CHOICES, runtime ?? "1");
 
     if (runtime === "vscode") {

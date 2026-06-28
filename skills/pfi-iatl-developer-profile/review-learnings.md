@@ -57,6 +57,8 @@ Archivo vivo (vista humana). **Índice consultable:** `~/.cursor/iatl-knowledge/
 - Hub Mongo: persistir learnings con `~/.cursor/iatl-knowledge/ingest.js`; consultar al arrancar sesión con ticket.
 - @pfi-patterns-advisor solo si el usuario marca foco patrones — no en cada review.
 - **Triage review externo:** contrastar informe dev + review automatizado + código; tabla única (falso positivo | aplicable | deuda preexistente | diferido); *"es análisis"* = cero código.
+- **Cotejo CR informe automatizado:** mantener IDs originales del informe (V1, S1, P1…); tabla § cotejo con columna *¿Informe correcto?* + *Estado post-fix*; regenerar `CODE-REVIEW-PFI-XXXX.md` tras fixes (ver PFI-1243 11/11).
+- **PFI-1243 V3 DTO (2026-06-28):** `@IsOptional()` en `value`/`id` anula `@IsNotEmpty` con `@ValidateIf` — quitar `@IsOptional` solo en esos campos; validar con curl persona solo `label` → 400.
 - Tras aplicar hallazgos: regenerar CODE-REVIEW con tabla de ítems **cerrados** (ID, commit, estado).
 - Review PR: validar URL/rama **antes** del diff (evitar revisar PR equivocado por rama local activa).
 

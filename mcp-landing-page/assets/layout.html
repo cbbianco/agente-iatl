@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style id="theme-style"></style>
+</head>
+<body class="{{THEME_CLASS}}">
+  <nav class="navbar">
+    <div class="nav-container">
+      <div class="logo">
+        <span class="logo-icon">✨</span>
+        <span class="logo-text">IATL-Craft</span>
+      </div>
+      <div class="nav-links">
+        <a href="#features">Características</a>
+        <a href="#testimonials">Testimonios</a>
+        <a href="{{CTA_URL}}" class="btn btn-sm btn-primary">{{CTA_TEXT}}</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-container">
+      <h1 class="hero-title">{{HERO_TITLE}}</h1>
+      <p class="hero-subtitle">{{HERO_SUBTITLE}}</p>
+      <div class="hero-actions">
+        <a href="{{CTA_URL}}" class="btn btn-lg btn-primary">{{CTA_TEXT}}</a>
+        <a href="#features" class="btn btn-lg btn-secondary">Explorar</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="features" class="section">
+      <div class="section-container">
+        <h2 class="section-title">Habilidades Clave</h2>
+        <div class="grid grid-3">
+          {{FEATURES_GRID}}
+        </div>
+      </div>
+    </section>
+
+    <section id="testimonials" class="section section-alt">
+      <div class="section-container">
+        <h2 class="section-title">Testimonios del Equipo</h2>
+        <div class="grid grid-2">
+          {{TESTIMONIALS_GRID}}
+        </div>
+      </div>
+    </section>
+
+    <section class="section cta-section">
+      <div class="cta-card glass">
+        <h2 class="cta-title">¿Listo para escalar tus proyectos?</h2>
+        <p class="cta-text-p">Generación autónoma y control estricto de arquitectura para código moderno.</p>
+        <a href="{{CTA_URL}}" class="btn btn-lg btn-primary">{{CTA_TEXT}}</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-container">
+      <p>&copy; 2026 IATL-Craft. Todos los derechos reservados.</p>
+      <p class="footer-tagline">Construido autónomamente con el MCP IATL Landing-Page.</p>
+    </div>
+  </footer>
+</body>
+</html>

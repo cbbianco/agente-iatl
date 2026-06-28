@@ -3,7 +3,7 @@
 > Fuente operativa: Mongo `working_branches` vía skill `pfi-daily-branch-tracker`.  
 > Actualizar este archivo al registrar/cerrar ramas.
 
-**Última sync:** 2026-06-26
+**Última sync:** 2026-06-28
 
 ---
 
@@ -23,11 +23,11 @@
 
 ## Ramas mergeadas / cerradas HITL (recientes)
 
-4. **PFI-1243** · especies conexas informacion-entrega · **merged (cierre 2026-06-26)**
-   - `pfi-1243/feature/persistencia-especies-conexas-informacion-entrega` · `e8978b02`
-   - `conflict_resolutions/develop/pfi-1243/...` · `76f6f105`
-   - `conflict_resolutions/qa/pfi-1243/...` · `ae0c41ac`
-   - QA DEV 9/9 sync PUT especies conexas · learning trace: sesión profile DEV
+4. **PFI-1243** · especies conexas informacion-entrega · **merged (cierre 2026-06-28)**
+   - `pfi-1243/feature/persistencia-especies-conexas-informacion-entrega` · `d538b9b6` (CR V1–V3 P1–P2)
+   - `conflict_resolutions/develop/pfi-1243/...` · `617f58cb`
+   - `conflict_resolutions/qa/pfi-1243/...` · `6c5468ce`
+   - QA DEV T1–T7 sync · CR cotejo 11/11 informe Claude Code · V3: quitar `@IsOptional` en persona value/id
 
 5. **PFI-1245** · roles mercancía área riesgo · **merged (2026-06-26)**
    - GET todos roles PFI · POST/PUT/DELETE solo Fiscalizador

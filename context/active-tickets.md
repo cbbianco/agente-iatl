@@ -2,7 +2,7 @@
 
 > Espejo de contexto operativo. Specs completos en `pfi-backend-core/docs/spec-driven/` (local, gitignored).
 
-**Última sync:** 2026-06-26
+**Última sync:** 2026-06-28
 
 ---
 
@@ -30,15 +30,16 @@
 
 ## Cerrados recientes (HITL)
 
-### PFI-1243 — Especies conexas informacion-entrega — **CERRADO** (2026-06-26)
+### PFI-1243 — Especies conexas informacion-entrega — **CERRADO** (2026-06-28)
 
 | Campo | Valor |
 |-------|-------|
 | Lambda | `lambda-casos` |
-| Endpoints | `PUT/GET .../personas/informacion-entrega` |
-| QA | DEV 9/9 (sync delete/update/insert) |
-| Hub | `ticket_closures` + `resume_context` (traza sesión profile DEV) |
-| Commits | feature `e8978b02` · develop `76f6f105` · qa `ae0c41ac` |
+| Endpoints | `GET/POST/PUT .../personas/informacion-entrega` |
+| CR | Cotejo informe Claude Code **11/11** — `docs/spec-driven/CODE-REVIEW-PFI-1243.md` |
+| Fixes | V1–V3, P1–P2 (`617f58cb` / `d538b9b6` / `6c5468ce`) |
+| QA | DEV T1–T7 sync OK · POST 409 duplicado · V3 fix `@IsOptional` en persona |
+| Hub | `ticket_closures` + `resume_context` (traza cotejo CR + QA) |
 
 ### PFI-1245 — Roles mercancía área riesgo — **CERRADO** (2026-06-26)
 

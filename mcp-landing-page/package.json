@@ -1,0 +1,13 @@
+{
+  "name": "landing-page-mcp",
+  "version": "1.0.0",
+  "description": "MCP Server de construcción autónoma para Landing Pages de alta estética",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "landing-page-mcp": "./index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
