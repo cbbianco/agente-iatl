@@ -23,18 +23,18 @@ function parseArgs(argv) {
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--non-interactive") out.nonInteractive = true;
-    else if (a === "--runtime" && argv[i + 1]) out.runtime = argv[++i];
-    else if (a === "--project" && argv[i + 1]) out.project = argv[++i];
-    else if (a === "--context" && argv[i + 1]) out.projectContext = argv[++i];
-    else if (a === "--sprint" && argv[i + 1]) out.sprintLabel = argv[++i];
-    else if (a === "--sprint-active" && argv[i + 1]) out.sprintActive = argv[++i] === "true";
-    else if (a === "--sprint-duration" && argv[i + 1]) out.sprintDuration = argv[++i];
-    else if (a === "--architecture" && argv[i + 1]) out.architectureTarget = argv[++i];
-    else if (a === "--architecture-current" && argv[i + 1]) out.architectureCurrent = argv[++i];
-    else if (a === "--retention" && argv[i + 1]) out.retentionDays = argv[++i];
-    else if (a === "--legacy-path" && argv[i + 1]) out.legacyMonolithPath = argv[++i];
-    else if (a === "--legacy-api" && argv[i + 1]) out.legacyApiBaseDev = argv[++i];
-    else if (a === "--project-root" && argv[i + 1]) out.projectRoot = argv[++i];
+    else if (a === "--runtime" && argv[i + 1] !== undefined) out.runtime = argv[++i];
+    else if (a === "--project" && argv[i + 1] !== undefined) out.project = argv[++i];
+    else if (a === "--context" && argv[i + 1] !== undefined) out.projectContext = argv[++i];
+    else if (a === "--sprint" && argv[i + 1] !== undefined) out.sprintLabel = argv[++i];
+    else if (a === "--sprint-active" && argv[i + 1] !== undefined) out.sprintActive = argv[++i] === "true";
+    else if (a === "--sprint-duration" && argv[i + 1] !== undefined) out.sprintDuration = argv[++i];
+    else if (a === "--architecture" && argv[i + 1] !== undefined) out.architectureTarget = argv[++i];
+    else if (a === "--architecture-current" && argv[i + 1] !== undefined) out.architectureCurrent = argv[++i];
+    else if (a === "--retention" && argv[i + 1] !== undefined) out.retentionDays = argv[++i];
+    else if (a === "--legacy-path" && argv[i + 1] !== undefined) out.legacyMonolithPath = argv[++i];
+    else if (a === "--legacy-api" && argv[i + 1] !== undefined) out.legacyApiBaseDev = argv[++i];
+    else if (a === "--project-root" && argv[i + 1] !== undefined) out.projectRoot = argv[++i];
     else if (a === "--skip-hub-setup") out.skipHubSetup = true;
     else if (a === "--claude-code") out.claudeCode = true;
     else if (a === "--no-claude-code") out.claudeCode = false;
@@ -214,6 +214,8 @@ async function main() {
       config.sprintDuration,
       "--architecture",
       config.architectureTarget,
+      "--architecture-current",
+      config.architectureCurrent,
       "--retention",
       String(config.retentionDays),
       "--runtime",
