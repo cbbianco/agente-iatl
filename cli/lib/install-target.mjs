@@ -19,6 +19,75 @@ function ensureDir(path) {
   mkdirSync(path, { recursive: true });
 }
 
+function adaptPathContent(content, runtimeTarget) {
+  if (runtimeTarget === "cursor") return content;
+
+  let targetAgents = "~/.antigravity/agents";
+  let targetSkills = "~/.antigravity/skills";
+  let targetHub = "~/.antigravity/iatl-knowledge";
+
+  if (runtimeTarget === "vscode") {
+    targetAgents = "~/.iatl/agents";
+    targetSkills = "~/.iatl/skills";
+    targetHub = "~/.iatl/iatl-knowledge";
+  } else if (runtimeTarget === "vscode-claude") {
+    targetAgents = "~/.claude/iatl/agents";
+    targetSkills = "~/.claude/iatl/skills";
+    targetHub = "~/.claude/iatl-knowledge";
+  } else if (runtimeTarget === "docker") {
+    targetAgents = "/opt/iatl/agents";
+    targetSkills = "/opt/iatl/skills";
+    targetHub = "/opt/iatl/iatl-knowledge";
+  }
+
+  return content
+    .replace(/~\/\.cursor\/agents/g, targetAgents)
+    .replace(/~\/\.cursor\/skills/g, targetSkills)
+    .replace(/~\/\.cursor\/iatl-knowledge/g, targetHub);
+}
+
+function copyFilesAndAdapt(srcDir, destDir, filter, runtimeTarget) {
+  if (!existsSync(srcDir)) return 0;
+  ensureDir(destDir);
+  let count = 0;
+  for (const name of readdirSync(srcDir)) {
+    const src = join(srcDir, name);
+    if (!statSync(src).isFile() || !filter(name)) continue;
+    const dest = join(destDir, name);
+    if (name.endsWith(".md")) {
+      let content = readFileSync(src, "utf8");
+      content = adaptPathContent(content, runtimeTarget);
+      writeFileSync(dest, content, "utf8");
+    } else {
+      copyFileSync(src, dest);
+    }
+    count++;
+  }
+  return count;
+}
+
+function copyDirAndAdapt(src, dest, runtimeTarget) {
+  if (!existsSync(src)) return 0;
+  ensureDir(dest);
+  for (const name of readdirSync(src)) {
+    const srcPath = join(src, name);
+    const destPath = join(dest, name);
+    const stat = statSync(srcPath);
+    if (stat.isDirectory()) {
+      copyDirAndAdapt(srcPath, destPath, runtimeTarget);
+    } else if (stat.isFile()) {
+      if (name.endsWith(".md")) {
+        let content = readFileSync(srcPath, "utf8");
+        content = adaptPathContent(content, runtimeTarget);
+        writeFileSync(destPath, content, "utf8");
+      } else {
+        copyFileSync(srcPath, destPath);
+      }
+    }
+  }
+  return 1;
+}
+
 function copyDir(src, dest) {
   if (!existsSync(src)) return 0;
   ensureDir(dest);
@@ -51,13 +120,14 @@ export function installArtifacts(runtimeTarget, projectRoot) {
   ensureDir(paths.skills);
   ensureDir(paths.hub);
 
-  const agentsCopied = copyFilesFlat(
+  const agentsCopied = copyFilesAndAdapt(
     join(REPO_ROOT, "agents"),
     paths.agents,
     (n) => n.endsWith(".md"),
+    runtimeTarget,
   );
 
-  copyDir(join(REPO_ROOT, "mongo", "scripts"), paths.hub);
+  copyDirAndAdapt(join(REPO_ROOT, "mongo", "scripts"), paths.hub, runtimeTarget);
   if (existsSync(join(REPO_ROOT, "mongo", "package.json"))) {
     copyFileSync(join(REPO_ROOT, "mongo", "package.json"), join(paths.hub, "package.json"));
   }
@@ -74,14 +144,17 @@ export function installArtifacts(runtimeTarget, projectRoot) {
   for (const entry of readdirSync(skillsRoot)) {
     const src = join(skillsRoot, entry);
     if (statSync(src).isDirectory()) {
-      copyDir(src, join(paths.skills, entry));
+      copyDirAndAdapt(src, join(paths.skills, entry), runtimeTarget);
       continue;
     }
     if (!entry.endsWith(".md") || entry === "catalog.md") continue;
     const skillName = entry.replace(/\.md$/, "");
     const destSkillDir = join(paths.skills, skillName);
     ensureDir(destSkillDir);
-    copyFileSync(src, join(destSkillDir, "SKILL.md"));
+    const destFile = join(destSkillDir, "SKILL.md");
+    let content = readFileSync(src, "utf8");
+    content = adaptPathContent(content, runtimeTarget);
+    writeFileSync(destFile, content, "utf8");
   }
 
   let repoVersion = "0.11.0";
@@ -143,7 +216,12 @@ Estás ejecutando en el runtime: **${runtimeTarget}**
   \`\`\`bash
   node ${paths.hub}/query.js --classify-ticket --summary "..." --issue-type Story
   \`\`\`
-- **Revisión de Código y Arquitectura (COE Review):**
+- **Sincronizar Skills desde la Base Centralizada:**
+  \`\`\`bash
+  node ${paths.hub}/query.js --sync-skills
+  \`\`\`
+- **Revisión de Código y Arquitectura (COE Review) [Autónomo]:**
+  El módulo de revisión de código estático (\`coe-review.js\`) es totalmente autónomo e independiente de cualquier extensión del IDE o herramienta de IA de terceros. Se ejecuta tras la instalación y bajo demanda:
   \`\`\`bash
   node ${paths.hub}/coe-review.js
   \`\`\`

@@ -11,6 +11,9 @@
  *   node query.js --peer-discussions --ticket PFI-XXXX
  *   node query.js --working-branches [--ticket PFI-XXXX] [--status active]
  */
+import { writeFileSync, mkdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
 import { getDb, closeDb } from "./lib/mongo.js";
 import { loadConfig } from "./lib/config.js";
 import { pickResumeTrace, buildResumeContext, normalizeLearningEntry } from "./lib/learning-trace.js";
@@ -342,8 +345,64 @@ async function main() {
     return;
   }
 
+  if (args.skills) {
+    const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
+    const rows = await db
+      .collection("skills")
+      .find({ project })
+      .project({ skillId: 1, name: 1, description: 1, "files.filename": 1, updatedAt: 1 })
+      .sort({ skillId: 1 })
+      .toArray();
+    console.log(JSON.stringify({ skills: rows }, null, 2));
+    await closeDb();
+    return;
+  }
+
+  if (args["sync-skills"]) {
+    const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
+    const rows = await db
+      .collection("skills")
+      .find({ project })
+      .toArray();
+
+    if (!rows.length) {
+      console.log(JSON.stringify({ message: "No se encontraron skills centralizados en MongoDB para este proyecto.", synced: 0 }));
+      await closeDb();
+      return;
+    }
+
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const hubPath = __dirname;
+    const runtime = config.runtimeTarget ?? config.ide ?? "cursor";
+    const skillsPath = runtime === "vscode-claude" 
+      ? join(hubPath, "..", "iatl", "skills") 
+      : join(hubPath, "..", "skills");
+
+    let syncedCount = 0;
+    for (const skill of rows) {
+      const skillDir = join(skillsPath, skill.skillId);
+      mkdirSync(skillDir, { recursive: true });
+      for (const file of skill.files ?? []) {
+        writeFileSync(join(skillDir, file.filename), file.content, "utf8");
+      }
+      syncedCount++;
+    }
+
+    console.log(JSON.stringify({
+      message: `Sincronización exitosa. Habilidades actualizadas en el entorno local del IDE.`,
+      runtime,
+      local_skills_path: skillsPath,
+      synced_skills: rows.map(r => r.skillId),
+      count: syncedCount
+    }, null, 2));
+    await closeDb();
+    return;
+  }
+
   console.error(
-    "Uso: query.js --ticket PFI-XXXX | --active-learnings | --tag patterns | --session <id> | --knowledge-sources [--category X] | --peer-discussions [--ticket PFI-XXXX] | --working-branches [--ticket PFI-XXXX] [--status active] | --ticket-closure --ticket PFI-XXXX | --project-config | --semantic-search \"texto\" [--category X] | --chroma-health | --ide-detect | --classify-ticket --summary \"...\" [--issue-type Bug] [--labels a,b] [--ticket PFI-XXXX] | --ticket-metrics [--ticket PFI-XXXX] [--project pfi-backend-core]",
+    "Uso: query.js --ticket PFI-XXXX | --active-learnings | --tag patterns | --session <id> | --knowledge-sources [--category X] | --peer-discussions [--ticket PFI-XXXX] | --working-branches [--ticket PFI-XXXX] [--status active] | --ticket-closure --ticket PFI-XXXX | --project-config | --semantic-search \"texto\" [--category X] | --chroma-health | --ide-detect | --classify-ticket --summary \"...\" [--issue-type Bug] [--labels a,b] [--ticket PFI-XXXX] | --ticket-metrics [--ticket PFI-XXXX] [--project pfi-backend-core] | --skills | --sync-skills",
   );
   process.exit(1);
 }

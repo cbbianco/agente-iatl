@@ -301,6 +301,7 @@ async function main() {
   console.log("\n--- Inicializando hub ---\n");
   runNode("init-indexes.js");
   runNode("seed-knowledge-sources.js");
+  runNode("seed-skills.js");
 
   if (!args.skipMigrate) {
     console.log("\n--- Migrando conocimiento semántico → ChromaDB ---\n");
