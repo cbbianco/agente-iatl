@@ -6,7 +6,7 @@ Documentación de la arquitectura de agentes IATL para **pfi-backend-core**.
 
 ## ¿Qué es IATL? (Inteligencia Artificial In the Loop)
 
-**IATL (Ingeniero Artificial Team Lead)** no es simplemente otro chatbot o copiloto interactivo de programación. Es un **paradigma de Ingeniería de Software colaborativo basado en el concepto de "Inteligencia Artificial In the Loop" (IAIL)**.
+**IATL (Inteligencia Artificial In the Loop)** no es simplemente otro chatbot o copiloto interactivo de programación. Es un **paradigma de Ingeniería de Software colaborativo basado en el concepto de "Inteligencia Artificial In the Loop" (IAIL)**.
 
 A diferencia del enfoque tradicional de *Human-in-the-Loop* (donde la IA maneja el desarrollo y el humano solo valida de forma pasiva), en IATL **el desarrollador humano es el eje central y conductor creativo**, mientras que una red jerárquica de agentes especializados de IA se integra de forma activa en el flujo de trabajo en momentos clave (quality gates) para asegurar la excelencia del código, validar la arquitectura, evitar antipatrones y autogenerar herramientas complementarias.
 
