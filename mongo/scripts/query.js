@@ -401,8 +401,25 @@ async function main() {
     return;
   }
 
+  if (args["active-sessions"]) {
+    const config = loadConfig();
+    const project = args.project ?? config.project ?? "pfi-backend-core";
+    const filter = { 
+      project, 
+      status: { $in: ["active", "active_analysis", "active_spec_driven"] } 
+    };
+    const rows = await db
+      .collection("sessions")
+      .find(filter)
+      .sort({ updatedAt: -1 })
+      .toArray();
+    console.log(JSON.stringify({ active_sessions: rows }, null, 2));
+    await closeDb();
+    return;
+  }
+
   console.error(
-    "Uso: query.js --ticket PFI-XXXX | --active-learnings | --tag patterns | --session <id> | --knowledge-sources [--category X] | --peer-discussions [--ticket PFI-XXXX] | --working-branches [--ticket PFI-XXXX] [--status active] | --ticket-closure --ticket PFI-XXXX | --project-config | --semantic-search \"texto\" [--category X] | --chroma-health | --ide-detect | --classify-ticket --summary \"...\" [--issue-type Bug] [--labels a,b] [--ticket PFI-XXXX] | --ticket-metrics [--ticket PFI-XXXX] [--project pfi-backend-core] | --skills | --sync-skills",
+    "Uso: query.js --ticket PFI-XXXX | --active-learnings | --tag patterns | --session <id> | --active-sessions | --knowledge-sources [--category X] | --peer-discussions [--ticket PFI-XXXX] | --working-branches [--ticket PFI-XXXX] [--status active] | --ticket-closure --ticket PFI-XXXX | --project-config | --semantic-search \"texto\" [--category X] | --chroma-health | --ide-detect | --classify-ticket --summary \"...\" [--issue-type Bug] [--labels a,b] [--ticket PFI-XXXX] | --ticket-metrics [--ticket PFI-XXXX] [--project pfi-backend-core] | --skills | --sync-skills",
   );
   process.exit(1);
 }
