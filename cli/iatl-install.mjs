@@ -16,7 +16,7 @@ import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { RUNTIME_CHOICES } from "./lib/paths.mjs";
-import { getRepoRoot, installArtifacts, runHubSetup } from "./lib/install-target.mjs";
+import { getRepoRoot, installArtifacts, runHubSetup, writeIDEProjectHints } from "./lib/install-target.mjs";
 
 function parseArgs(argv) {
   const out = { nonInteractive: false };
@@ -226,6 +226,10 @@ async function main() {
       setupFlags.push("--legacy-api", config.legacyApiBaseDev);
     }
     runHubSetup(paths.hub, setupFlags);
+    writeIDEProjectHints(runtime, projectRoot, paths, config);
+  } else {
+    // Si se omite la configuración del hub, igual generamos el archivo de soporte
+    writeIDEProjectHints(runtime, projectRoot, paths, config);
   }
 
   if (runtime === "docker") {

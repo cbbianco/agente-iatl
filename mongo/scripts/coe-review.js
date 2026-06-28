@@ -186,6 +186,7 @@ async function main() {
     }
 
     // D. Escaneo de malas prácticas línea por línea
+    let subscriptionChecked = false;
     lines.forEach((line, index) => {
       const lineNum = index + 1;
 
@@ -203,7 +204,7 @@ async function main() {
         }
       }
 
-      // 2. Uso abusivo de 'any' en TypeScript
+      // 2. Uso abusivo de 'any' en TypeScript o python 'Any'
       if (/\bany\b/.test(line) && file.name.endsWith(".ts") && !line.includes("eslint-disable")) {
         // Evitar falsos positivos comunes
         if (line.includes(":") && !line.includes("import") && !line.includes("function") && !line.includes("class")) {
@@ -217,19 +218,27 @@ async function main() {
         }
       }
 
-      // 3. console.log directo en vez de usar un logger
+      // 3. console.log directo en vez de usar un logger (o print en Python)
       if (/\bconsole\.log\(/.test(line) && !line.includes("//")) {
         badPractices.push({
           file: relPath,
           line: lineNum,
           code: line.trim(),
           category: "Logger / Depuración",
-          reason: "Uso de console.log en código operativo. Se recomienda implementar un logger estructurado (Winston, Nest Logger, etc.)."
+          reason: "Uso de console.log en código operativo. Se recomienda implementar un logger estructurado."
+        });
+      } else if (file.name.endsWith(".py") && /^\s*print\(/.test(line)) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Logger / Depuración (Python)",
+          reason: "Uso de print() directo en código operativo. Se recomienda usar la librería estándar de logging para estructurar los logs."
         });
       }
 
       // 4. Comentarios TODO/FIXME pendientes
-      if (/\/\/\s*(TODO|FIXME|XXX)/i.test(line)) {
+      if (/\/\/\s*(TODO|FIXME|XXX)/i.test(line) || /#\s*(TODO|FIXME|XXX)/i.test(line)) {
         badPractices.push({
           file: relPath,
           line: lineNum,
@@ -248,6 +257,14 @@ async function main() {
           category: "Código Comentado",
           reason: "Bloques de código comentados en producción. Se recomienda eliminarlos ya que el control de versiones (Git) mantiene el historial."
         });
+      } else if (file.name.endsWith(".py") && /^\s*#\s*(import|def|class|if|for|while|return)\b/.test(line)) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Código Comentado (Python)",
+          reason: "Bloque de código comentado detectado en Python. Se recomienda eliminarlo para mantener la limpieza de la base de código."
+        });
       }
 
       // 6. Consultas SQL o MongoDB directamente en el controlador o capa externa
@@ -258,6 +275,62 @@ async function main() {
           code: line.trim(),
           category: "Acoplamiento de Datos",
           reason: "Consultas de base de datos directamente en la capa de transporte/controladores. Violaría la responsabilidad única."
+        });
+      }
+
+      // 7. [Python] Captura genérica de excepciones
+      if (file.name.endsWith(".py") && /^\s*except\s*(\s+Exception)?\s*:/.test(line)) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Manejo de Errores (Python)",
+          reason: "Bloque de captura genérico 'except Exception:'. Puede enmascarar errores inesperados. Se recomienda capturar excepciones específicas o registrar/relanzar la excepción."
+        });
+      }
+
+      // 8. [Python] Modificación de estado global
+      if (file.name.endsWith(".py") && /\bglobal\s+[a-zA-Z_]/.test(line)) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Diseño / Variables Globales",
+          reason: "Uso de la palabra clave 'global'. Aumenta el acoplamiento y dificulta la modularización y pruebas unitarias."
+        });
+      }
+
+      // 9. [Angular] Acceso directo al DOM
+      if (file.name.endsWith(".ts") && /document\./.test(line) && !line.includes("typeof document")) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Acceso Directo al DOM (Angular)",
+          reason: "Acceso directo a la API global 'document'. En Angular se prefiere usar ElementRef, Renderer2, o ViewChild para mantener compatibilidad con SSR o Web Workers."
+        });
+      }
+
+      // 10. [Angular] URLs Hardcodeadas en servicios
+      if (file.name.endsWith(".ts") && !relPath.includes("environment") && /(http|https):\/\/[a-zA-Z0-9_\-\.]+/.test(line)) {
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Configuración Hardcodeada (Angular)",
+          reason: "Dirección URL absoluta hardcodeada en el código. Se recomienda moverla a environment.ts o un servicio de configuración."
+        });
+      }
+
+      // 11. [Angular] Fugas de memoria por suscripción activa
+      if (file.name.endsWith(".ts") && content.includes(".subscribe(") && !content.includes("unsubscribe") && !content.includes("takeUntil") && !content.includes("Subscription") && !subscriptionChecked) {
+        subscriptionChecked = true;
+        badPractices.push({
+          file: relPath,
+          line: lineNum,
+          code: line.trim(),
+          category: "Fuga de Memoria (Angular)",
+          reason: "Se detectó uso de '.subscribe()' sin unsubscribe explícito ni uso de patrones de limpieza como takeUntil o async pipe. Esto puede causar fugas de memoria al destruir el componente."
         });
       }
     });
@@ -282,12 +355,14 @@ async function main() {
   }
 
   // 5. Comparar arquitectura detectada con la declarada y el target
-  const matchesDeclared = detectedArch.toLowerCase().includes(archCurrentDeclared.toLowerCase()) || 
+  const matchesDeclared = !archCurrentDeclared || 
+                          detectedArch.toLowerCase().includes(archCurrentDeclared.toLowerCase()) || 
                           (archCurrentDeclared.toLowerCase() === "hexagonal" && detectedArch.includes("Hexagonal")) ||
                           (archCurrentDeclared.toLowerCase() === "mvc" && detectedArch.includes("MVC")) ||
                           (archCurrentDeclared.toLowerCase() === "layered" && detectedArch.includes("Layered"));
 
-  const matchesTarget = detectedArch.toLowerCase().includes(archTarget.toLowerCase()) ||
+  const matchesTarget = !archTarget ||
+                        detectedArch.toLowerCase().includes(archTarget.toLowerCase()) ||
                         (archTarget.toLowerCase().includes("hexagonal") && detectedArch.includes("Hexagonal")) ||
                         (archTarget.toLowerCase().includes("serverless") && detectedArch.includes("Serverless")) ||
                         (archTarget.toLowerCase().includes("capas") && detectedArch.includes("Layered"));
@@ -296,28 +371,30 @@ async function main() {
   let gapScore = 100;
   const gaps = [];
 
-  if (!matchesTarget) {
+  if (archTarget && !matchesTarget) {
     gapScore -= 25;
     gaps.push(`La arquitectura real detectada (${detectedArch}) no coincide con la arquitectura objetivo deseada (${archTarget}).`);
   }
 
-  if (archTarget.includes("hexagonal") || archTarget.includes("clean")) {
-    if (!dirNames.some((n) => /domain|core/i.test(n))) {
-      gapScore -= 15;
-      gaps.push("Falta la carpeta o capa de Dominio pura (domain/core).");
-    }
-    if (!dirNames.some((n) => /infrastructure|adapters|infra/i.test(n))) {
-      gapScore -= 15;
-      gaps.push("Falta la capa de Infraestructura/Adaptadores (adapters/infrastructure).");
-    }
-  } else if (archTarget.includes("capas") || archTarget.includes("layered")) {
-    if (!dirNames.some((n) => /service/i.test(n))) {
-      gapScore -= 10;
-      gaps.push("Falta la carpeta o capa lógica de Servicios (services).");
-    }
-    if (!dirNames.some((n) => /repository|dao/i.test(n))) {
-      gapScore -= 10;
-      gaps.push("Falta la carpeta o capa de acceso a datos (repositories/dao).");
+  if (archTarget) {
+    if (archTarget.toLowerCase().includes("hexagonal") || archTarget.toLowerCase().includes("clean")) {
+      if (!dirNames.some((n) => /domain|core/i.test(n))) {
+        gapScore -= 15;
+        gaps.push("Falta la carpeta o capa de Dominio pura (domain/core).");
+      }
+      if (!dirNames.some((n) => /infrastructure|adapters|infra/i.test(n))) {
+        gapScore -= 15;
+        gaps.push("Falta la capa de Infraestructura/Adaptadores (adapters/infrastructure).");
+      }
+    } else if (archTarget.toLowerCase().includes("capas") || archTarget.toLowerCase().includes("layered")) {
+      if (!dirNames.some((n) => /service/i.test(n))) {
+        gapScore -= 10;
+        gaps.push("Falta la carpeta o capa lógica de Servicios (services).");
+      }
+      if (!dirNames.some((n) => /repository|dao/i.test(n))) {
+        gapScore -= 10;
+        gaps.push("Falta la carpeta o capa de acceso a datos (repositories/dao).");
+      }
     }
   }
 
@@ -343,14 +420,21 @@ Reporte de revisión de código estático y alineación arquitectónica generado
 - **Fecha de Análisis:** \`${timestamp}\`
 
 ### ⚙️ Configuración y Estado del Proyecto
-- **Arquitectura Base Declarada (Base/Root):** \`${archCurrentDeclared}\`
-- **Arquitectura Objetivo Deseada (Target):** \`${archTarget}\`
-- **Arquitectura Real Detectada en Código:** \`${detectedArch}\`
-- **Alineación Declarado vs Detectado:** ${matchesDeclared ? "✅ Consistente" : "⚠️ Desviado (Declaraste '" + archCurrentDeclared + "' pero detectamos '" + detectedArch + "')"}
-- **Puntaje de Alineación y Calidad (COE Score):** \`${finalScore}/100\`
+`;
 
----
+  if (archCurrentDeclared) {
+    report += `- **Arquitectura Base Declarada (Base/Root):** \`${archCurrentDeclared}\`\n`;
+  }
+  if (archTarget) {
+    report += `- **Arquitectura Objetivo Deseada (Target):** \`${archTarget}\`\n`;
+  }
+  report += `- **Arquitectura Real Detectada en Código:** \`${detectedArch}\`\n`;
+  if (archCurrentDeclared && archTarget) {
+    report += `- **Alineación Declarado vs Detectado:** ${matchesDeclared ? "✅ Consistente" : "⚠️ Desviado (Declaraste '" + archCurrentDeclared + "' pero detectamos '" + detectedArch + "')"}\n`;
+  }
+  report += `- **Puntaje de Alineación y Calidad (COE Score):** \`${finalScore}/100\`\n\n---\n`;
 
+  report += `
 ## 🏛️ Análisis Estructural y Tecnológico
 
 El escáner analizó dinámicamente las carpetas y dependencias de la base de código, arrojando el siguiente diagnóstico:
@@ -388,9 +472,9 @@ ${
         return `### 🚨 [${bp.category}] en [${bp.file}:${bp.line}](file:///${join(projectRoot, bp.file)}#L${bp.line})
 - **Problema:** ${bp.reason}
 - **Línea de Código:**
-  \x60\x60\x60${ext}
+  \`\`\`${ext}
   ${bp.code}
-  \x60\x60\x60
+  \`\`\`
 `;
       }).join("\n")
 }
@@ -406,7 +490,10 @@ ${
 }
 
 ---
+`;
 
+  if (archTarget) {
+    report += `
 ## 🔀 Brechas y Gaps Arquitectónicos (Target: ${archTarget})
 
 ${
@@ -417,12 +504,19 @@ ${gaps.map((g) => `- ${g}`).join("\n")}`
 }
 
 ---
+`;
+  }
 
+  report += `
 ## 💡 Recomendaciones y Plan de Acción del COE
+`;
 
-1. **Alinear la Estructura de Directorios:** Si tu objetivo es \`${archTarget}\`, reestructura el proyecto base de acuerdo a los hallazgos descritos arriba.
-2. **Eliminar Secretos Expuestos:** Asegúrate de mover cualquier contraseña o token duro a variables de entorno (\`.env\` / secret manager).
-3. **Limpieza de logs y código comentado:** Remueve los \`console.log\` de depuración y limpia el código comentado para facilitar la lectura.
+  let recIndex = 1;
+  if (archTarget) {
+    report += `\n${recIndex++}. **Alinear la Estructura de Directorios:** Si tu objetivo es \`${archTarget}\`, reestructura el proyecto base de acuerdo a los hallazgos descritos arriba.`;
+  }
+  report += `\n${recIndex++}. **Eliminar Secretos Expuestos:** Asegúrate de mover cualquier contraseña o token duro a variables de entorno (\`.env\` / secret manager).`;
+  report += `\n${recIndex++}. **Limpieza de logs y código comentado:** Remueve los \`console.log\` de depuración y limpia el código comentado para facilitar la lectura.
 
 ---
 *Reporte de análisis arquitectónico autónomo e integral sin asunciones previas.*

@@ -106,30 +106,72 @@ export function installArtifacts(runtimeTarget, projectRoot) {
     setupDockerStack(REPO_ROOT, projectRoot);
   }
 
-  if (runtimeTarget === "vscode-claude" && projectRoot) {
-    writeClaudeCodeProjectHints(projectRoot, paths);
-  }
-
   return { paths, agentsCopied };
 }
 
-function writeClaudeCodeProjectHints(projectRoot, paths) {
-  const claudeDir = join(projectRoot, ".claude");
-  ensureDir(claudeDir);
-  const hint = `# IATL — Claude Code
+export function writeIDEProjectHints(runtimeTarget, projectRoot, paths, config) {
+  if (!projectRoot || !existsSync(projectRoot)) return;
 
-Agentes instalados globalmente en: \`${paths.agents}\`
-Hub Mongo/Chroma: \`${paths.hub}\`
+  const project = config.project ?? "pfi-backend-core";
+  const context = config.projectContext ?? "";
+  const sprintLabel = config.sprintLabel ?? "";
+  const sprintDuration = config.sprintDuration ?? "";
+  const archTarget = config.architectureTarget ?? "";
+  const archCurrent = config.architectureCurrent ?? "";
 
-Arranque sesión:
-\`\`\`bash
-node ${paths.hub}/query.js --project-config
-node ${paths.hub}/query.js --classify-ticket --summary "..." --issue-type Story
-\`\`\`
+  const hintContent = `# 🧠 Instrucciones y Reglas de Arquitectura IATL
 
-Orquestador: ver agente \`iatl.md\` en \`${paths.agents}\`.
+Estás ejecutando en el runtime: **${runtimeTarget}**
+
+## 📋 Información del Proyecto
+- **Proyecto Activo:** ${project}
+- **Contexto:** ${context}
+- **Sprint Activo:** ${sprintLabel ? `Sí (${sprintLabel}, duración: ${sprintDuration})` : "No"}
+- **Arquitectura de Base:** ${archCurrent || "No especificada (Plana)"}
+- **Arquitectura Objetivo:** ${archTarget || "No especificada (Plana)"}
+
+## 📂 Ubicaciones del Entorno
+- **Agentes Globales:** \`${paths.agents}\`
+- **Hub de Conocimiento:** \`${paths.hub}\`
+
+## 🛠️ Comandos del Hub Disponibles
+- **Ver Configuración / Iniciar Sesión:**
+  \`\`\`bash
+  node ${paths.hub}/query.js --project-config
+  \`\`\`
+- **Clasificar Ticket / Tarea:**
+  \`\`\`bash
+  node ${paths.hub}/query.js --classify-ticket --summary "..." --issue-type Story
+  \`\`\`
+- **Revisión de Código y Arquitectura (COE Review):**
+  \`\`\`bash
+  node ${paths.hub}/coe-review.js
+  \`\`\`
 `;
-  writeFileSync(join(claudeDir, "IATL.md"), hint);
+
+  // 1. Escribir para Claude Code (.claude/IATL.md)
+  if (runtimeTarget === "vscode-claude") {
+    const claudeDir = join(projectRoot, ".claude");
+    ensureDir(claudeDir);
+    writeFileSync(join(claudeDir, "IATL.md"), hintContent, "utf8");
+  }
+
+  // 2. Escribir para Cursor (.cursorrules)
+  if (runtimeTarget === "cursor") {
+    writeFileSync(join(projectRoot, ".cursorrules"), hintContent, "utf8");
+  }
+
+  // 3. Escribir para VS Code (.vscode/IATL.md)
+  if (runtimeTarget === "vscode") {
+    const vscodeDir = join(projectRoot, ".vscode");
+    ensureDir(vscodeDir);
+    writeFileSync(join(vscodeDir, "IATL.md"), hintContent, "utf8");
+  }
+
+  // 4. Escribir para Antigravity (.antigravity.md en la raíz del proyecto)
+  if (runtimeTarget === "antigravity") {
+    writeFileSync(join(projectRoot, ".antigravity.md"), hintContent, "utf8");
+  }
 }
 
 function setupDockerStack(repoRoot, projectRoot) {
