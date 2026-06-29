@@ -676,6 +676,20 @@
     </div>
   </div>
 
+  <!-- AGENT METRIC EXPLANATION MODAL -->
+  <div id="agent-metric-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-card" style="max-width: 560px;">
+      <div class="modal-header">
+        <h3 id="agent-metric-modal-title">Métrica del agente</h3>
+        <button class="btn-close-modal" onclick="closeAgentMetricModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="agent-metric-modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" onclick="closeAgentMetricModal()">Entendido</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ADD KNOWLEDGE MODAL -->
   <div id="add-knowledge-modal" class="modal-overlay" style="display:none;">
     <div class="modal-card">
@@ -1185,22 +1199,30 @@
       renderCheckpoints(session.checkpoints || []);
     }
 
+    let agentPerformanceCache = [];
+
     async function loadAgentPerformance() {
       try {
         const res = await fetch('/api/agent-performance');
         if (!res.ok) throw new Error('Error al cargar rendimiento de agentes');
         const data = await res.json();
+        agentPerformanceCache = data.agents || [];
         
         document.getElementById('metrics-ticket-count').textContent = data.metricsSource === 'benchmark'
-          ? `Promedio histórico IATL (0 tickets en ${appConfig.project || 'proyecto'})`
-          : `Evaluados sobre ${data.totalTickets} ticket(s) del proyecto`;
+          ? `Referencia histórica (0 cierres medidos en ${appConfig.project || 'proyecto'}) — clic en agente para detalle`
+          : `Basado en ${data.totalTickets} ticket(s) del proyecto — clic en agente para ver fórmula`;
         
         const container = document.getElementById('agents-cards-container');
         container.innerHTML = '';
         
-        data.agents.forEach(agent => {
+        data.agents.forEach((agent, idx) => {
           const card = document.createElement('div');
-          card.className = 'agent-card';
+          card.className = 'agent-card agent-card-clickable';
+          card.title = 'Clic para ver cómo se calculó esta métrica';
+          card.onclick = () => openAgentMetricModal(agent);
+          const trustBadge = agent.metricExplanation?.trustworthy
+            ? '<span class="badge badge-success" style="font-size:0.65rem;">Dato proyecto</span>'
+            : '<span class="badge badge-secondary" style="font-size:0.65rem;">Benchmark / parcial</span>';
           card.innerHTML = `
             <div>
               <div class="agent-header">
@@ -1215,9 +1237,10 @@
             </div>
             
             <div class="agent-performance-box">
-              <div style="display: flex; flex-direction: column;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
                 <span class="agent-metric-name">Métrica HITL</span>
                 <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">${agent.acceptanceMetric}</span>
+                ${trustBadge}
               </div>
               <div class="agent-metric-val">${agent.avgPerformance}</div>
             </div>
@@ -1241,7 +1264,10 @@
         const isBenchmark = payload.metricsSource === 'benchmark';
         const banner = document.getElementById('metrics-source-banner');
 
-        if (isBenchmark) {
+        if (isBenchmark && metrics.some((m) => m.inProgress)) {
+          banner.style.display = 'block';
+          banner.innerHTML = `ℹ️ Hay ticket(s) con <strong>sesión activa</strong> sin cierre HITL (ej. en curso). Los promedios superiores son benchmark hasta tener <code>ticket_metrics</code>.`;
+        } else if (isBenchmark) {
           banner.style.display = 'block';
           banner.innerHTML = `ℹ️ Sin tickets procesados en <strong>${appConfig.project || 'este proyecto'}</strong>. Se muestran promedios históricos de referencia IATL (no datos simulados de este proyecto).`;
           const b = payload.benchmark || {};
@@ -1272,35 +1298,43 @@
         let totalPeerBugs = 0;
         let totalTimeSaved = 0;
 
+        const closedMetrics = metrics.filter((m) => !m.inProgress);
+        
         metrics.forEach(m => {
-          totalDuration += (m.durationMinutes || 0);
-          if (m.proposalAcceptedFirstTry) totalFirstTry++;
-          totalPeerBugs += (m.peerReviewBugsFound || 0);
+          if (!m.inProgress) {
+            totalDuration += (m.durationMinutes || 0);
+            if (m.proposalAcceptedFirstTry) totalFirstTry++;
+            totalPeerBugs += (m.peerReviewBugsFound || 0);
+          }
           
           let score = 50;
-          score += (m.peerReviewBugsFound || 0) * 10;
-          if (m.proposalAcceptedFirstTry) score += 20;
-          if ((m.reworkRounds || 0) === 0) score += 10;
-          if (m.classification === 'bug' && m.durationMinutes < 300) score += 10;
+          if (!m.inProgress) {
+            score += (m.peerReviewBugsFound || 0) * 10;
+            if (m.proposalAcceptedFirstTry) score += 20;
+            if ((m.reworkRounds || 0) === 0) score += 10;
+            if (m.classification === 'bug' && m.durationMinutes < 300) score += 10;
+          }
           score = Math.min(100, score);
           
-          let contributionLabel = 'Media (Ayuda estándar)';
-          let badgeClass = 'badge-secondary';
-          if (score >= 85) {
-            contributionLabel = 'Máxima (Aceleración crítica)';
-            badgeClass = 'badge-success';
-          } else if (score >= 65) {
-            contributionLabel = 'Alta (Aceleración significativa)';
-            badgeClass = 'badge-accent';
-          } else if (score < 50) {
-            contributionLabel = 'Baja';
-            badgeClass = 'badge-danger';
+          let contributionLabel = m.inProgress ? 'En curso (sin cierre)' : 'Media (Ayuda estándar)';
+          let badgeClass = m.inProgress ? 'badge-accent' : 'badge-secondary';
+          if (!m.inProgress) {
+            if (score >= 85) {
+              contributionLabel = 'Máxima (Aceleración crítica)';
+              badgeClass = 'badge-success';
+            } else if (score >= 65) {
+              contributionLabel = 'Alta (Aceleración significativa)';
+              badgeClass = 'badge-accent';
+            } else if (score < 50) {
+              contributionLabel = 'Baja';
+              badgeClass = 'badge-danger';
+            }
           }
 
-          const savedMinutes = ((m.peerReviewBugsFound || 0) * 120) + (m.proposalAcceptedFirstTry ? 240 : 0) + ((m.reworkRounds || 0) === 0 ? 180 : 0);
+          const savedMinutes = m.inProgress ? 0 : ((m.peerReviewBugsFound || 0) * 120) + (m.proposalAcceptedFirstTry ? 240 : 0) + ((m.reworkRounds || 0) === 0 ? 180 : 0);
           totalTimeSaved += savedMinutes;
 
-          const durationHrs = ((m.durationMinutes || 0) / 60).toFixed(1);
+          const durationHrs = m.inProgress ? '—' : ((m.durationMinutes || 0) / 60).toFixed(1);
           
           const tr = document.createElement('tr');
           tr.style.borderBottom = '1px solid rgba(255, 255, 255, 0.05)';
@@ -1309,24 +1343,30 @@
           tr.onclick = () => showStickyTicketDrawer(m.ticket);
           tr.innerHTML = `
             <td style="padding: 12px 10px; font-weight: 600; font-family: 'Fira Code', monospace; color: var(--secondary);">${m.ticket}</td>
-            <td style="padding: 12px 10px; text-transform: capitalize;">${m.classification || 'feature'}</td>
-            <td style="padding: 12px 10px;">${durationHrs} hrs</td>
-            <td style="padding: 12px 10px; font-weight: 500;">${m.peerReviewBugsFound || 0}</td>
-            <td style="padding: 12px 10px; font-weight: 500;">${m.finalReviewBugsFound || 0}</td>
-            <td style="padding: 12px 10px; font-weight: 500;">${m.reworkRounds || 0}</td>
+            <td style="padding: 12px 10px; text-transform: capitalize;">${m.classification || m.statusLabel || 'feature'}</td>
+            <td style="padding: 12px 10px;">${durationHrs}${m.inProgress ? ' hrs' : ' hrs'}</td>
+            <td style="padding: 12px 10px; font-weight: 500;">${m.inProgress ? '—' : (m.peerReviewBugsFound || 0)}</td>
+            <td style="padding: 12px 10px; font-weight: 500;">${m.inProgress ? '—' : (m.finalReviewBugsFound || 0)}</td>
+            <td style="padding: 12px 10px; font-weight: 500;">${m.inProgress ? '—' : (m.reworkRounds || 0)}</td>
             <td style="padding: 12px 10px;"><span class="badge ${badgeClass}">${contributionLabel}</span></td>
           `;
           tbody.appendChild(tr);
         });
 
-        const avgDurationHrs = ((totalDuration / metrics.length) / 60).toFixed(1);
-        const acceptanceRate = Math.round((totalFirstTry / metrics.length) * 100);
-        const avgTimeSavedHrs = (totalTimeSaved / 60).toFixed(1);
-
-        document.getElementById('metric-avg-duration').textContent = `${avgDurationHrs} hrs`;
-        document.getElementById('metric-acceptance-rate').textContent = `${acceptanceRate}%`;
-        document.getElementById('metric-peer-bugs-prevented').textContent = totalPeerBugs;
-        document.getElementById('metric-time-saved').textContent = `${avgTimeSavedHrs} hrs`;
+        if (closedMetrics.length > 0) {
+          const avgDurationHrs = ((totalDuration / closedMetrics.length) / 60).toFixed(1);
+          const acceptanceRate = Math.round((totalFirstTry / closedMetrics.length) * 100);
+          const avgTimeSavedHrs = (totalTimeSaved / 60).toFixed(1);
+          document.getElementById('metric-avg-duration').textContent = `${avgDurationHrs} hrs`;
+          document.getElementById('metric-acceptance-rate').textContent = `${acceptanceRate}%`;
+          document.getElementById('metric-peer-bugs-prevented').textContent = totalPeerBugs;
+          document.getElementById('metric-time-saved').textContent = `${avgTimeSavedHrs} hrs`;
+        } else if (!isBenchmark) {
+          document.getElementById('metric-avg-duration').textContent = '—';
+          document.getElementById('metric-acceptance-rate').textContent = '—';
+          document.getElementById('metric-peer-bugs-prevented').textContent = '0';
+          document.getElementById('metric-time-saved').textContent = '—';
+        }
 
       } catch (err) {
         console.error(err);
@@ -1892,64 +1932,111 @@
       const body = document.getElementById('drawer-ticket-body');
       
       title.textContent = `Detalles del Ticket: ${ticket}`;
-      body.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--text-muted);">Cargando detalles del ticket...</div>`;
+      body.innerHTML = `<div class="drawer-loading">Cargando detalles del ticket...</div>`;
       drawer.classList.add('active');
       
       try {
-        const res = await fetch(`/api/session-details?ticket=${ticket}`);
+        const res = await fetch(`/api/session-details?ticket=${encodeURIComponent(ticket)}`);
         if (!res.ok) throw new Error('No se pudieron obtener detalles del ticket');
         const data = await res.json();
+        const ins = data.insights;
         
-        const s = (data.sessions && data.sessions[0]) || data.session;
-        if (!s) {
-          body.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--text-muted);">No hay sesiones activas de desarrollo para este ticket en este proyecto.</div>`;
+        if (!ins && !data.sessions?.length) {
+          body.innerHTML = `<div class="drawer-empty">No hay datos de este ticket en el proyecto <strong>${appConfig.project || 'activo'}</strong>.</div>`;
           return;
         }
-        
-        const totalDuration = s.durationMinutes || 0;
-        const durationHrs = (totalDuration / 60).toFixed(1);
-        
-        let verdictLabel = data.closure && data.closure.verdict ? data.closure.verdict : 'En progreso / Abierto';
-        if (verdictLabel === 'closed_implementation') verdictLabel = 'Implementación Cerrada';
-        else if (verdictLabel === 'closed') verdictLabel = 'Cerrado';
-        
+
+        const statusColor = ins.isActive ? 'var(--success)' : 'var(--text-muted)';
+        const durationText = ins.durationHours != null ? `${ins.durationHours} hrs` : '—';
+        const checkpointsHtml = (ins.checkpoints || []).length
+          ? `<ul class="drawer-checkpoint-list">${ins.checkpoints.map((cp) =>
+              `<li><strong>${cp.phase || 'fase'}:</strong> ${cp.summary || '—'} <span class="drawer-cp-date">${cp.at ? new Date(cp.at).toLocaleString('es-CL') : ''}</span></li>`
+            ).join('')}</ul>`
+          : '<p class="drawer-muted">Sin checkpoints registrados.</p>';
+
+        const learningsHtml = (data.learnings || []).slice(0, 4).map((l) =>
+          `<li>${typeof l.text === 'string' ? l.text : l.text?.text || JSON.stringify(l)}</li>`
+        ).join('') || '<li class="drawer-muted">Sin aprendizajes activos.</li>';
+
+        const endpointsHtml = (ins.endpoints || []).length
+          ? ins.endpoints.map((e) => `<code class="drawer-code">${e}</code>`).join(' ')
+          : '<span class="drawer-muted">—</span>';
+
         body.innerHTML = `
           <div class="drawer-meta-panel">
             <div class="drawer-meta-item">
               <span class="drawer-meta-lbl">Estado</span>
-              <span class="drawer-meta-val" style="color: ${s.status === 'open' ? 'var(--success)' : 'var(--text-muted)'}; text-transform: uppercase; font-weight: 700;">${s.status === 'open' ? 'Abierto' : 'Cerrado'}</span>
+              <span class="drawer-meta-val" style="color: ${statusColor}; font-weight: 700;">${ins.statusLabel}</span>
             </div>
             <div class="drawer-meta-item">
               <span class="drawer-meta-lbl">Clasificación</span>
-              <span class="drawer-meta-val" style="text-transform: capitalize;">${s.classification || 'feature'}</span>
+              <span class="drawer-meta-val">${ins.classificationLabel}</span>
             </div>
             <div class="drawer-meta-item">
-              <span class="drawer-meta-lbl">Tiempo de Cierre</span>
-              <span class="drawer-meta-val">${durationHrs} hrs</span>
+              <span class="drawer-meta-lbl">Rama actual</span>
+              <span class="drawer-meta-val drawer-mono">${ins.latestBranch}</span>
             </div>
             <div class="drawer-meta-item">
-              <span class="drawer-meta-lbl">Rondas Rework</span>
-              <span class="drawer-meta-val">${s.reworkRounds || 0}</span>
+              <span class="drawer-meta-lbl">Fase sesión</span>
+              <span class="drawer-meta-val">${ins.latestPhase}</span>
             </div>
             <div class="drawer-meta-item">
-              <span class="drawer-meta-lbl">Veces Reabierto</span>
-              <span class="drawer-meta-val">${s.reopenedCount || 0}</span>
+              <span class="drawer-meta-lbl">Tiempo de cierre</span>
+              <span class="drawer-meta-val">${durationText}</span>
+            </div>
+            ${ins.durationNote ? `<p class="drawer-note">${ins.durationNote}</p>` : ''}
+            <div class="drawer-meta-item">
+              <span class="drawer-meta-lbl">Rondas rework</span>
+              <span class="drawer-meta-val">${ins.reworkRounds}</span>
+            </div>
+            ${ins.reworkNote ? `<p class="drawer-note">${ins.reworkNote}</p>` : ''}
+            <div class="drawer-meta-item">
+              <span class="drawer-meta-lbl">Veces reabierto</span>
+              <span class="drawer-meta-val">${ins.reopenedCount} <span class="drawer-muted">(${ins.sessionCount} ciclo(s))</span></span>
             </div>
             <div class="drawer-meta-item">
-              <span class="drawer-meta-lbl">Veredicto Cierre</span>
-              <span class="drawer-meta-val" style="color: var(--secondary);">${verdictLabel}</span>
+              <span class="drawer-meta-lbl">Veredicto HITL</span>
+              <span class="drawer-meta-val" style="color: var(--secondary);">${ins.verdictLabel}</span>
             </div>
+            ${ins.closedAt ? `<div class="drawer-meta-item"><span class="drawer-meta-lbl">Cerrado</span><span class="drawer-meta-val">${new Date(ins.closedAt).toLocaleString('es-CL')}</span></div>` : ''}
           </div>
           <div class="drawer-details-panel">
-            <div class="drawer-details-title">Resumen de Resolución y Soporte del Agente</div>
-            <div class="drawer-details-text">
-              ${data.closure && data.closure.summary ? data.closure.summary : 'El agente implementó los cambios especificados de forma autónoma. El HITL procedió a validar y aprobar el ticket para su mezcla final.'}
-            </div>
+            <div class="drawer-details-title">Resumen operativo</div>
+            <div class="drawer-details-text">${ins.summaryDetailed}</div>
+            <div class="drawer-details-title" style="margin-top:14px;">Checkpoints recientes</div>
+            ${checkpointsHtml}
+            <div class="drawer-details-title" style="margin-top:14px;">Aprendizajes activos</div>
+            <ul class="drawer-checkpoint-list">${learningsHtml}</ul>
+            <div class="drawer-details-title" style="margin-top:14px;">Endpoints (cierre)</div>
+            <div>${endpointsHtml}</div>
           </div>
         `;
       } catch (err) {
-        body.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 20px; color: var(--danger);">Error al cargar: ${err.message}</div>`;
+        body.innerHTML = `<div class="drawer-empty" style="color: var(--danger);">Error al cargar: ${err.message}</div>`;
       }
+    }
+
+    function openAgentMetricModal(agent) {
+      const exp = agent.metricExplanation || {};
+      document.getElementById('agent-metric-modal-title').textContent = `${agent.handle} — ${agent.acceptanceMetric}`;
+      const trustworthy = exp.trustworthy
+        ? '<span class="badge badge-success">Confiable para este proyecto</span>'
+        : '<span class="badge badge-secondary">Referencia / datos insuficientes</span>';
+      const fraction = exp.numerator != null && exp.denominator != null
+        ? `<p><strong>Cálculo:</strong> ${exp.numerator} / ${exp.denominator} = <strong>${agent.avgPerformance}</strong></p>`
+        : '';
+      document.getElementById('agent-metric-modal-body').innerHTML = `
+        <p style="margin-bottom:12px;">${trustworthy}</p>
+        <p><strong>Fórmula:</strong> ${exp.formula || '—'}</p>
+        ${fraction}
+        <p style="margin-top:12px; line-height:1.55; color: var(--text-muted);">${exp.detail || 'Sin detalle adicional.'}</p>
+        <p class="drawer-note" style="margin-top:16px;">Las métricas usan colecciones Mongo del proyecto activo: <code>ticket_metrics</code>, <code>ticket_closures</code> y <code>pattern_evals</code>. Si no hay cierres, se muestra benchmark histórico IATL (no es dato real del ticket).</p>
+      `;
+      document.getElementById('agent-metric-modal').style.display = 'flex';
+    }
+
+    function closeAgentMetricModal() {
+      document.getElementById('agent-metric-modal').style.display = 'none';
     }
 
     function closeStickyTicketDrawer() {

@@ -5,6 +5,24 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.13.3] — 2026-06-29
+
+**Tema:** Drawer de ticket coherente + explicación de métricas de agentes al clic.
+
+### Añadido
+
+- **`mongo/scripts/lib/ticket-insights.js`** — estado, veredicto, duración y resumen coherentes desde Mongo
+- **Modal de métrica de agente** — al clic en tarjeta: fórmula, numerador/denominador y si es dato proyecto o benchmark
+- **Tabla métricas** — incluye tickets con sesión activa sin `ticket_metrics` (ej. PFI-1226 en curso)
+
+### Cambiado
+
+- **Drawer pegajoso** — ya no marca `active_spec_driven` como cerrado; resumen con checkpoints, learnings, rama y endpoints
+- **`/api/session-details`** — devuelve `insights`, `ticketMetric`, `classification`
+- **`/api/agent-performance`** — cada agente incluye `metricExplanation` (confiable o benchmark)
+
+---
+
 ## [0.13.2] — 2026-06-29
 
 **Tema:** Tipos de landing-page (curriculum) + estilos select en modal/dashboard.

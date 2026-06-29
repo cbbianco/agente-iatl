@@ -1589,10 +1589,11 @@ select.form-control option,
 /* Sticky Footer Drawer */
 .sticky-drawer {
   position: fixed;
-  bottom: -400px; /* Hidden by default */
-  left: 280px; /* Align with sidebar width (280px) */
+  bottom: -520px;
+  left: 280px;
   right: 0;
-  height: 320px;
+  height: min(480px, 55vh);
+  min-height: 360px;
   background: rgba(13, 18, 30, 0.95);
   backdrop-filter: blur(20px);
   border-top: 2px solid var(--secondary);
@@ -1688,11 +1689,75 @@ select.form-control option,
 .drawer-details-text {
   color: var(--text-muted);
   font-size: 0.9rem;
-  line-height: 1.5;
+  line-height: 1.55;
   background: rgba(255, 255, 255, 0.02);
   padding: 15px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.drawer-loading,
+.drawer-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+.drawer-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+  margin: 4px 0 10px;
+}
+
+.drawer-muted {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.drawer-mono {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+  word-break: break-all;
+}
+
+.drawer-code {
+  display: inline-block;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  margin-right: 6px;
+}
+
+.drawer-checkpoint-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.drawer-checkpoint-list li {
+  margin-bottom: 8px;
+}
+
+.drawer-cp-date {
+  display: block;
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+
+.agent-card-clickable {
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.agent-card-clickable:hover {
+  border-color: rgba(99, 102, 241, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 /* Wizard CSS */

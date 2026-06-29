@@ -27,6 +27,7 @@ import {
   BENCHMARK_AGENT_METRICS,
   BENCHMARK_TICKET_METRICS,
 } from "./lib/runtime-context.js";
+import { buildTicketInsights, isSessionActive } from "./lib/ticket-insights.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -137,6 +138,21 @@ function computeAgentPerformance(metrics, closures, patternEvals) {
         avgPerformance: `${iatlAvg.toFixed(1)}%`,
         status: "Activo",
         avatar: "💻",
+        metricExplanation: useBenchmark
+          ? {
+              source: "benchmark",
+              trustworthy: false,
+              formula: "Promedio histórico IATL de referencia",
+              detail: `No hay cierres HITL en ticket_closures para este proyecto. Se muestra ${BENCHMARK_AGENT_METRICS.iatl}% como benchmark, no un dato real del proyecto.`,
+            }
+          : {
+              source: "project",
+              trustworthy: totalClosures > 0,
+              formula: "(cierres aprobados / total cierres) × 100",
+              numerator: approvedClosures,
+              denominator: totalClosures,
+              detail: `${approvedClosures} de ${totalClosures} cierre(s) HITL con veredicto aprobado (closed_implementation, closed o APROBADO).`,
+            },
       },
       {
         id: "tl-peer-daniel",
@@ -148,6 +164,21 @@ function computeAgentPerformance(metrics, closures, patternEvals) {
         avgPerformance: `${peerAvg.toFixed(1)}%`,
         status: "Activo",
         avatar: "🛡️",
+        metricExplanation: useBenchmark
+          ? {
+              source: "benchmark",
+              trustworthy: false,
+              formula: "Promedio histórico IATL de referencia",
+              detail: `Sin registros en ticket_metrics. Benchmark ${BENCHMARK_AGENT_METRICS["tl-peer-daniel"]}%.`,
+            }
+          : {
+              source: "project",
+              trustworthy: totalTickets > 0,
+              formula: "(propuestas aceptadas al 1er intento / tickets medidos) × 100",
+              numerator: firstTryAccepted,
+              denominator: totalTickets,
+              detail: `${firstTryAccepted} ticket(s) con proposalAcceptedFirstTry=true en ticket_metrics.`,
+            },
       },
       {
         id: "patterns-advisor",
@@ -159,6 +190,21 @@ function computeAgentPerformance(metrics, closures, patternEvals) {
         avgPerformance: `${patternsAvg.toFixed(1)}%`,
         status: "Activo",
         avatar: "📐",
+        metricExplanation: useBenchmark
+          ? {
+              source: "benchmark",
+              trustworthy: false,
+              formula: "Promedio histórico IATL de referencia",
+              detail: `Sin evaluaciones en pattern_evals. Benchmark ${BENCHMARK_AGENT_METRICS["patterns-advisor"]}%.`,
+            }
+          : {
+              source: "project",
+              trustworthy: patternEvals.length > 0,
+              formula: "(patrones declared === real / total evals) × 100",
+              numerator: patternMatches,
+              denominator: patternEvals.length,
+              detail: `${patternMatches} de ${patternEvals.length} evaluación(es) en pattern_evals con coincidencia declarado/real.`,
+            },
       },
       {
         id: "cr-analyst",
@@ -170,6 +216,21 @@ function computeAgentPerformance(metrics, closures, patternEvals) {
         avgPerformance: `${crAvg.toFixed(1)}%`,
         status: "Activo",
         avatar: "🔍",
+        metricExplanation: useBenchmark
+          ? {
+              source: "benchmark",
+              trustworthy: false,
+              formula: "Promedio histórico IATL de referencia",
+              detail: `Sin ticket_metrics con finalReviewBugsFound. Benchmark ${BENCHMARK_AGENT_METRICS["cr-analyst"]}%.`,
+            }
+          : {
+              source: "project",
+              trustworthy: totalTickets > 0,
+              formula: "(tickets con 0 bugs finales / tickets medidos) × 100",
+              numerator: zeroFinalBugs,
+              denominator: totalTickets,
+              detail: `${zeroFinalBugs} de ${totalTickets} ticket(s) con finalReviewBugsFound=0 en ticket_metrics.`,
+            },
       },
     ],
   };
@@ -365,15 +426,28 @@ async function startServer(port = DEFAULT_PORT) {
           return;
         }
 
-        const [findings, patterns, learnings, peerDiscussions, workingBranches, closure, sessions] = await Promise.all([
+        const [findings, patterns, learnings, peerDiscussions, workingBranches, closure, sessions, ticketMetric, classification] = await Promise.all([
           db.collection("review_findings").find({ ticket, project }).sort({ createdAt: -1 }).toArray(),
           db.collection("pattern_evals").find({ ticket, project }).sort({ createdAt: -1 }).toArray(),
           db.collection("learnings").find({ ticket, project, status: "active" }).sort({ createdAt: -1 }).toArray(),
           db.collection("peer_discussions").find({ ticket, project }).sort({ createdAt: -1 }).toArray(),
           db.collection("working_branches").find({ ticket, project }).sort({ updatedAt: -1 }).toArray(),
           db.collection("ticket_closures").findOne({ ticket, project }),
-          db.collection("sessions").find({ ticket, project }).sort({ updatedAt: -1 }).toArray()
+          db.collection("sessions").find({ ticket, project }).sort({ updatedAt: -1 }).toArray(),
+          db.collection("ticket_metrics").findOne({ ticket, project }),
+          db.collection("ticket_classifications").findOne({ ticket, project }),
         ]);
+
+        const insights = buildTicketInsights({
+          sessions,
+          closure,
+          ticketMetric,
+          classification,
+          learnings,
+          findings,
+          peerDiscussions,
+          workingBranches,
+        });
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({
@@ -384,7 +458,10 @@ async function startServer(port = DEFAULT_PORT) {
           learnings,
           peerDiscussions,
           workingBranches,
-          closure
+          closure,
+          ticketMetric,
+          classification,
+          insights,
         }));
         return;
       }
@@ -467,13 +544,47 @@ async function startServer(port = DEFAULT_PORT) {
 
       // 9. GET /api/ticket-metrics
       if (url.pathname === "/api/ticket-metrics" && method === "GET") {
-        const metrics = await db.collection("ticket_metrics").find({ project }).sort({ createdAt: -1 }).toArray();
+        const [metrics, sessions] = await Promise.all([
+          db.collection("ticket_metrics").find({ project }).sort({ createdAt: -1 }).toArray(),
+          db.collection("sessions").find({ project }).sort({ updatedAt: -1 }).toArray(),
+        ]);
+
+        const byTicket = new Map(metrics.map((m) => [m.ticket, { ...m, inProgress: false }]));
+        const sessionGroups = {};
+        for (const s of sessions) {
+          const t = s.ticket;
+          if (!t) continue;
+          if (!sessionGroups[t]) sessionGroups[t] = [];
+          sessionGroups[t].push(s);
+        }
+        for (const [ticket, runs] of Object.entries(sessionGroups)) {
+          if (byTicket.has(ticket)) continue;
+          runs.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+          const latest = runs[0];
+          const active = runs.some((r) => isSessionActive(r.status));
+          byTicket.set(ticket, {
+            ticket,
+            inProgress: active,
+            durationMinutes: 0,
+            proposalAcceptedFirstTry: false,
+            peerReviewBugsFound: 0,
+            reworkRounds: 0,
+            classification: latest.classification || "en curso",
+            statusLabel: active ? "Sesión activa" : "Sin métrica de cierre",
+          });
+        }
+
+        const merged = [...byTicket.values()].sort(
+          (a, b) => (b.createdAt ? new Date(b.createdAt) : 0) - (a.createdAt ? new Date(a.createdAt) : 0),
+        );
+        const hasProjectMetrics = metrics.length > 0;
+
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({
           project,
-          metricsSource: metrics.length > 0 ? "project" : "benchmark",
-          metrics,
-          benchmark: metrics.length === 0 ? BENCHMARK_TICKET_METRICS : null,
+          metricsSource: hasProjectMetrics ? "project" : "benchmark",
+          metrics: merged,
+          benchmark: hasProjectMetrics ? null : BENCHMARK_TICKET_METRICS,
         }));
         return;
       }
