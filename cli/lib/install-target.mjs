@@ -208,6 +208,10 @@ Estás ejecutando en el runtime: **${runtimeTarget}**
 - **Hub de Conocimiento:** \`${paths.hub}\`
 
 ## 🛠️ Comandos del Hub Disponibles
+- **Iniciar Dashboard de Control (Visualizar Sesiones y Base de Conocimiento):**
+  \`\`\`bash
+  node ${paths.hub}/dashboard.js
+  \`\`\`
 - **Ver Configuración / Iniciar Sesión:**
   \`\`\`bash
   node ${paths.hub}/query.js --project-config

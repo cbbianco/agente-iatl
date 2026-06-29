@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IATL Agent — Dashboard de Control</title>
+  <meta name="description" content="Dashboard premium para visualizar la base de conocimiento y el estado de las sesiones del agente IATL.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <!-- Ambient background glows -->
+  <div class="glow-bg glow-primary"></div>
+  <div class="glow-bg glow-secondary"></div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <div class="app-layout">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="logo-area">
+        <span class="logo-icon">🪐</span>
+        <div>
+          <h1 class="logo-title">IATL Agent</h1>
+          <span class="logo-sub">Dashboard de Control</span>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <button id="nav-btn-overview" class="nav-item active" onclick="switchTab('overview')">
+          <span class="nav-icon">📊</span>
+          <span class="nav-text">Resumen</span>
+        </button>
+        <button id="nav-btn-sessions" class="nav-item" onclick="switchTab('sessions')">
+          <span class="nav-icon">⏰</span>
+          <span class="nav-text">Sesiones</span>
+        </button>
+        <button id="nav-btn-knowledge" class="nav-item" onclick="switchTab('knowledge')">
+          <span class="nav-icon">🧠</span>
+          <span class="nav-text">Base Conocimiento</span>
+        </button>
+      </nav>
+
+      <div class="project-info-box">
+        <span class="info-lbl">PROYECTO ACTIVO</span>
+        <div id="project-slug-sidebar" class="info-val">cargando...</div>
+        <span class="info-lbl">ENTORNO RUNTIME</span>
+        <div id="runtime-sidebar" class="info-val">cargando...</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top header bar -->
+      <header class="top-header">
+        <div class="header-project-context">
+          <span class="badge badge-accent" id="sprint-badge">Sprint Activo: cargando...</span>
+          <h2 id="project-name-header">Proyecto: cargando...</h2>
+        </div>
+        <div class="db-mode-indicator">
+          <span class="db-mode-dot" id="db-mode-dot"></span>
+          <span id="db-mode-txt">Modo: cargando...</span>
+        </div>
+      </header>
+
+      <!-- Connection Error Banner -->
+      <div id="db-error-banner" class="db-error-banner" style="display:none;">
+        <span class="error-banner-icon">⚠️</span>
+        <div class="error-banner-content">
+          <strong>Error de Conexión a la Base de Datos:</strong>
+          <span id="db-error-banner-text">No se pudo establecer la conexión con MongoDB/JSON.</span>
+        </div>
+      </div>
+
+      <!-- TAB 1: OVERVIEW -->
+      <section id="tab-overview" class="tab-pane active">
+        <div class="overview-grid">
+          <!-- Quick Config Summary Card -->
+          <div class="panel col-span-2 shadow-glow">
+            <h3 class="panel-title"><span>⚙️</span> Configuración del Entorno de Agente</h3>
+            <div class="config-summary-grid">
+              <div class="config-item">
+                <span class="config-lbl">Ruta del Proyecto (Project Root)</span>
+                <span class="config-val monospace" id="cfg-root">cargando...</span>
+              </div>
+              <div class="config-item">
+                <span class="config-lbl">Contexto Funcional</span>
+                <span class="config-val" id="cfg-context">cargando...</span>
+              </div>
+              <div class="config-item">
+                <span class="config-lbl">Arquitectura Base</span>
+                <span class="config-val badge-arch" id="cfg-arch-current">cargando...</span>
+              </div>
+              <div class="config-item">
+                <span class="config-lbl">Arquitectura Objetivo</span>
+                <span class="config-val badge-arch target" id="cfg-arch-target">cargando...</span>
+              </div>
+              <div class="config-item">
+                <span class="config-lbl">Retención Cierres HITL</span>
+                <span class="config-val" id="cfg-retention">cargando...</span>
+              </div>
+              <div class="config-item" id="legacy-path-item" style="display:none;">
+                <span class="config-lbl">Ruta Monolito Legacy SAM</span>
+                <span class="config-val monospace" id="cfg-legacy-path">cargando...</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Stats widgets -->
+          <div class="stat-card">
+            <span class="stat-icon">⏰</span>
+            <div class="stat-content">
+              <span class="stat-lbl">Sesiones de Trabajo</span>
+              <div class="stat-value"><span id="stat-active-sessions">0</span> <small>activas</small> <span class="stat-divider">/</span> <span id="stat-total-sessions">0</span> <small>totales</small></div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-icon">🧠</span>
+            <div class="stat-content">
+              <span class="stat-lbl">Fuentes de Conocimiento</span>
+              <div class="stat-value" id="stat-knowledge-sources">0</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-icon">💡</span>
+            <div class="stat-content">
+              <span class="stat-lbl">Aprendizajes Activos</span>
+              <div class="stat-value" id="stat-learnings">0</div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <span class="stat-icon">🔍</span>
+            <div class="stat-content">
+              <span class="stat-lbl">Hallazgos Code Review</span>
+              <div class="stat-value" id="stat-findings">0</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-details-grid">
+          <!-- Active sprint details -->
+          <div class="panel">
+            <h3 class="panel-title"><span>📅</span> Detalles del Sprint Activo</h3>
+            <div class="sprint-box" id="sprint-details-container">
+              <div class="sprint-info-row">
+                <div class="sprint-info-col">
+                  <span class="sprint-info-lbl">Sprint</span>
+                  <span class="sprint-info-val" id="overview-sprint-label">-</span>
+                </div>
+                <div class="sprint-info-col">
+                  <span class="sprint-info-lbl">Duración</span>
+                  <span class="sprint-info-val" id="overview-sprint-duration">-</span>
+                </div>
+              </div>
+              <div class="sprint-info-row" style="margin-top: 15px;">
+                <div class="sprint-info-col">
+                  <span class="sprint-info-lbl">Cierres Realizados</span>
+                  <span class="sprint-info-val" id="overview-closures-count">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick access agent tools list -->
+          <div class="panel">
+            <h3 class="panel-title"><span>🛠️</span> Comandos Operativos Útiles</h3>
+            <div class="commands-list">
+              <div class="command-card">
+                <div class="command-info">
+                  <span class="command-name">Iniciar Sesión / Ver Configuración</span>
+                  <code class="command-code">node query.js --project-config</code>
+                </div>
+              </div>
+              <div class="command-card">
+                <div class="command-info">
+                  <span class="command-name">Ejecutar Revisión de Arquitectura COE</span>
+                  <code class="command-code">node coe-review.js</code>
+                </div>
+              </div>
+              <div class="command-card">
+                <div class="command-info">
+                  <span class="command-name">Sincronizar Skills</span>
+                  <code class="command-code">node query.js --sync-skills</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: SESSIONS -->
+      <section id="tab-sessions" class="tab-pane">
+        <div class="sessions-layout">
+          <!-- Left side list of sessions -->
+          <div class="panel sessions-list-panel">
+            <div class="panel-header-actions">
+              <h3 class="panel-title" style="margin-bottom:0;"><span>⏰</span> Lista de Sesiones</h3>
+              <div class="filter-group">
+                <select id="session-status-filter" class="form-control" onchange="filterSessions()">
+                  <option value="all">Todas las sesiones</option>
+                  <option value="active">Activas</option>
+                  <option value="closed">Cerradas</option>
+                </select>
+              </div>
+            </div>
+            
+            <div class="session-list-items" id="session-list-container">
+              <!-- Loading indicator -->
+              <div class="loading-spinner">Cargando sesiones...</div>
+            </div>
+          </div>
+
+          <!-- Right side details panel -->
+          <div class="panel session-details-panel">
+            <div id="session-details-empty" class="session-details-empty">
+              <span class="empty-icon">👈</span>
+              <h3>Selecciona una sesión de la lista</h3>
+              <p>Haz clic en cualquier sesión para ver los checkpoints del wizard, ramas git, aprendizajes ingestados, debates entre pares y hallazgos de código asociados.</p>
+            </div>
+
+            <div id="session-details-content" class="session-details-content" style="display:none;">
+              <!-- Selected Session Header -->
+              <div class="session-details-header">
+                <div class="session-title-wrap">
+                  <span class="session-ticket-badge" id="details-ticket">PFI-XXXX</span>
+                  <h3 id="details-project">Proyecto</h3>
+                </div>
+                <div id="details-status-badge">Activo</div>
+              </div>
+
+              <!-- Phase Tracker -->
+              <div class="session-phase-tracker">
+                <h4 class="section-title">Fase de la Sesión</h4>
+                <div class="phase-progress-bar">
+                  <div class="phase-line" id="phase-progress-line"></div>
+                  <div class="phase-step" id="phase-step-analisis">
+                    <span class="phase-dot">1</span>
+                    <span class="phase-lbl">Análisis</span>
+                  </div>
+                  <div class="phase-step" id="phase-step-backlog">
+                    <span class="phase-dot">2</span>
+                    <span class="phase-lbl">Backlog</span>
+                  </div>
+                  <div class="phase-step" id="phase-step-implementacion">
+                    <span class="phase-dot">3</span>
+                    <span class="phase-lbl">Implementación</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Inner Tabs for Session Info -->
+              <div class="details-tabs-header">
+                <button class="details-tab-btn active" onclick="switchDetailTab('checkpoints')">Checkpoints</button>
+                <button class="details-tab-btn" onclick="switchDetailTab('branches')">Ramas Git</button>
+                <button class="details-tab-btn" onclick="switchDetailTab('reviews')">Code Review / Patrones</button>
+                <button class="details-tab-btn" onclick="switchDetailTab('peer')">Debates / Aprendizajes</button>
+                <button class="details-tab-btn" onclick="switchDetailTab('closure')">Cierre HITL</button>
+              </div>
+
+              <!-- Detail Tab Contents -->
+              <div id="det-tab-checkpoints" class="details-tab-pane active">
+                <div class="checkpoint-timeline" id="details-checkpoints-list">
+                  <!-- Checkpoints injected here -->
+                </div>
+              </div>
+
+              <div id="det-tab-branches" class="details-tab-pane">
+                <div class="details-table-wrapper">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Rama</th>
+                        <th>Base</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Notas</th>
+                        <th>Última Actualización</th>
+                      </tr>
+                    </thead>
+                    <tbody id="details-branches-tbody">
+                      <!-- Git branches injected here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div id="det-tab-reviews" class="details-tab-pane">
+                <h4 class="sub-section-title">Hallazgos de Código (Review Findings)</h4>
+                <div class="details-table-wrapper" style="margin-bottom: 20px;">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Severidad</th>
+                        <th>Ubicación</th>
+                        <th>Resumen del Hallazgo</th>
+                        <th>Analista</th>
+                        <th>Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody id="details-findings-tbody">
+                      <!-- Findings injected here -->
+                    </tbody>
+                  </table>
+                </div>
+
+                <h4 class="sub-section-title">Evaluación de Patrones (Pattern Evals)</h4>
+                <div class="details-table-wrapper">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Componente</th>
+                        <th>Patrón Declarado</th>
+                        <th>Patrón Real</th>
+                        <th>Fuentes Consultadas</th>
+                      </tr>
+                    </thead>
+                    <tbody id="details-patterns-tbody">
+                      <!-- Patterns injected here -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div id="det-tab-peer" class="details-tab-pane">
+                <h4 class="sub-section-title">Debates del TL Peer (Peer Discussions)</h4>
+                <div id="details-peer-list" class="peer-discussions-list">
+                  <!-- Peer discussions list -->
+                </div>
+
+                <h4 class="sub-section-title" style="margin-top: 25px;">Aprendizajes Capturados (Learnings)</h4>
+                <ul class="learnings-list-bullets" id="details-learnings-list">
+                  <!-- Learnings list -->
+                </ul>
+              </div>
+
+              <div id="det-tab-closure" class="details-tab-pane">
+                <div id="details-closure-content">
+                  <!-- Closure details -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: KNOWLEDGE BASE -->
+      <section id="tab-knowledge" class="tab-pane">
+        <div class="panel">
+          <div class="panel-header-actions">
+            <h3 class="panel-title" style="margin-bottom:0;"><span>🧠</span> Índice de Base de Conocimiento</h3>
+            <div class="knowledge-toolbar">
+              <input type="text" id="knowledge-search" class="form-control text-input" placeholder="Buscar por nombre o tag..." oninput="filterKnowledge()">
+              <select id="knowledge-category-filter" class="form-control" onchange="filterKnowledge()">
+                <option value="all">Todas las categorías</option>
+                <!-- Categories populated dynamically -->
+              </select>
+              <button id="btn-add-knowledge-modal" class="btn btn-primary" onclick="openAddKnowledgeModal()">
+                <span>➕</span> Agregar Fuente
+              </button>
+            </div>
+          </div>
+
+          <div class="details-table-wrapper" style="margin-top: 20px;">
+            <table class="data-table" id="knowledge-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>ID / Slug</th>
+                  <th>Categoría</th>
+                  <th>Prioridad</th>
+                  <th>Tags</th>
+                  <th>Estado</th>
+                  <th>URL de Referencia</th>
+                </tr>
+              </thead>
+              <tbody id="knowledge-tbody">
+                <!-- Knowledge sources injected here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- ADD KNOWLEDGE MODAL -->
+  <div id="add-knowledge-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Agregar Nueva Fuente de Conocimiento</h3>
+        <button class="btn-close-modal" onclick="closeAddKnowledgeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="add-knowledge-form" onsubmit="submitKnowledge(event)">
+          <div class="form-group">
+            <label class="form-label" for="new-source-id">ID Único de la Fuente (Slug, sin espacios)</label>
+            <input type="text" id="new-source-id" class="form-control text-input" placeholder="ej: nestjs-hexagonal-lambda" required>
+            <span class="form-hint">Debe ser único. Letras, números y guiones únicamente.</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="new-name">Nombre Descriptivo</label>
+            <input type="text" id="new-name" class="form-control text-input" placeholder="ej: NestJS Hexagonal Lambda Architecture" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="new-category">Categoría</label>
+              <select id="new-category" class="form-control" required>
+                <option value="design-patterns">design-patterns (Patrones de diseño)</option>
+                <option value="rest-api">rest-api (Desarrollo REST/APIs)</option>
+                <option value="aws">aws (Servicios de Cloud/Lambdas)</option>
+                <option value="general">general (Conocimiento general)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="new-priority">Prioridad de consulta (1 - Alta, 5 - Baja)</label>
+              <input type="number" id="new-priority" class="form-control text-input" min="1" max="5" value="1" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="new-url">URL de la Fuente (Documentación o repositorio)</label>
+            <input type="url" id="new-url" class="form-control text-input" placeholder="ej: https://nestjs.com/docs/..." required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="new-tags">Tags / Etiquetas (Separados por coma)</label>
+            <input type="text" id="new-tags" class="form-control text-input" placeholder="ej: nestjs, hexagonal, clean-code">
+          </div>
+
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="new-enabled" class="checkbox-control" checked>
+            <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="new-enabled">¿Habilitar esta fuente inmediatamente?</label>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="closeAddKnowledgeModal()">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-knowledge">Guardar Fuente</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Javascript Logic -->
+  <script>
+    // State storage
+    let appConfig = {};
+    let dashboardSummary = {};
+    let allSessions = [];
+    let allKnowledge = [];
+    let activeTab = 'overview';
+    let activeDetailTab = 'checkpoints';
+    let selectedSession = null;
+
+    // Initialize Page
+    document.addEventListener('DOMContentLoaded', () => {
+      loadProjectConfig();
+      fetchDashboardSummary();
+      loadSessions();
+      loadKnowledgeSources();
+    });
+
+    // Show Toast
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <span class="toast-icon">${type === 'success' ? '✅' : '❌'}</span>
+        <span class="toast-msg">${message}</span>
+      `;
+      container.appendChild(toast);
+      
+      // Auto-remove after 4 seconds
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-20px)';
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 4000);
+    }
+
+    // Switch Tabs
+    function switchTab(tabId) {
+      activeTab = tabId;
+      document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+      document.getElementById(`nav-btn-${tabId}`).classList.add('active');
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+
+      if (tabId === 'sessions') {
+        loadSessions();
+      } else if (tabId === 'knowledge') {
+        loadKnowledgeSources();
+      } else if (tabId === 'overview') {
+        fetchDashboardSummary();
+      }
+    }
+
+    // Switch session details subtabs
+    function switchDetailTab(subTabId) {
+      activeDetailTab = subTabId;
+      document.querySelectorAll('.details-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.innerText.toLowerCase().includes(subTabId === 'checkpoints' ? 'checkpoints' : subTabId === 'branches' ? 'ramas' : subTabId === 'reviews' ? 'code review' : subTabId === 'peer' ? 'debates' : 'cierre')) {
+          btn.classList.add('active');
+        }
+      });
+      document.querySelectorAll('.details-tab-pane').forEach(pane => pane.classList.remove('active'));
+      document.getElementById(`det-tab-${subTabId}`).classList.add('active');
+    }
+
+    // Fetch Configurations
+    function loadProjectConfig() {
+      fetch('/api/config')
+        .then(res => res.json())
+        .then(config => {
+          appConfig = config;
+          
+          // Populate UI
+          document.getElementById('project-slug-sidebar').textContent = config.project || '-';
+          document.getElementById('runtime-sidebar').textContent = config.runtimeTarget || config.ide || 'unknown';
+          document.getElementById('project-name-header').textContent = `Proyecto: ${config.project || 'Sin Nombre'}`;
+          
+          document.getElementById('sprint-badge').textContent = config.sprintActive 
+            ? `Sprint Activo: ${config.sprintLabel || 'Sí'}` 
+            : 'Sin Sprint Activo';
+          
+          const modeDot = document.getElementById('db-mode-dot');
+          if (config.useLocalJsonDb) {
+            modeDot.className = 'db-mode-dot db-json';
+            document.getElementById('db-mode-txt').textContent = 'Persistencia: JSON Local';
+          } else {
+            modeDot.className = 'db-mode-dot db-mongo';
+            document.getElementById('db-mode-txt').textContent = 'Persistencia: MongoDB';
+          }
+
+          document.getElementById('cfg-root').textContent = config.projectRoot || 'No configurada';
+          document.getElementById('cfg-context').textContent = config.projectContext || 'Sin contexto descriptivo';
+          document.getElementById('cfg-arch-current').textContent = config.architectureCurrent || 'No especificada';
+          document.getElementById('cfg-arch-target').textContent = config.architectureTarget || 'No especificada';
+          document.getElementById('cfg-retention').textContent = `${config.retentionDays || 14} días`;
+
+          if (config.legacyMonolithPath) {
+            document.getElementById('legacy-path-item').style.display = 'block';
+            document.getElementById('cfg-legacy-path').textContent = config.legacyMonolithPath;
+          }
+
+          // Sprint panel details
+          document.getElementById('overview-sprint-label').textContent = config.sprintLabel || 'Ninguno';
+          document.getElementById('overview-sprint-duration').textContent = config.sprintDuration || 'Sin límite';
+        })
+        .catch(err => {
+          console.error("Error cargando configuración:", err);
+          showToast("Error al conectar con la API de configuración.", "error");
+        });
+    }
+
+    // Helper to handle fetch responses and reject on error statuses
+    function handleResponse(res) {
+      if (!res.ok) {
+        return res.json().then(err => {
+          throw err;
+        }).catch(() => {
+          throw { error: "HTTP_ERROR", details: `Error HTTP ${res.status}` };
+        });
+      }
+      return res.json();
+    }
+
+    function showDbErrorBanner(details) {
+      const banner = document.getElementById('db-error-banner');
+      if (banner) {
+        banner.style.display = 'flex';
+        const txt = document.getElementById('db-error-banner-text');
+        if (txt) {
+          txt.textContent = `No se pudo establecer la conexión con la base de datos (${details}). Asegúrate de que MongoDB esté levantado en el puerto 27017 o activa la persistencia JSONDbMock en tu config.json.`;
+        }
+      }
+    }
+
+    function hideDbErrorBanner() {
+      const banner = document.getElementById('db-error-banner');
+      if (banner) banner.style.display = 'none';
+    }
+
+    // Fetch Dashboard Summary Stats
+    function fetchDashboardSummary() {
+      fetch('/api/dashboard-summary')
+        .then(handleResponse)
+        .then(summary => {
+          hideDbErrorBanner();
+          dashboardSummary = summary;
+          
+          document.getElementById('stat-total-sessions').textContent = summary.totalSessions;
+          document.getElementById('stat-active-sessions').textContent = summary.activeSessionsCount;
+          document.getElementById('stat-knowledge-sources').textContent = summary.totalKnowledgeSources;
+          document.getElementById('stat-learnings').textContent = summary.activeLearningsCount;
+          document.getElementById('stat-findings').textContent = summary.openFindingsCount;
+          document.getElementById('overview-closures-count').textContent = summary.closuresCount;
+        })
+        .catch(err => {
+          console.error("Error al obtener resumen de estadísticas:", err);
+          if (err && err.error === "DB_CONNECTION_ERROR") {
+            showDbErrorBanner(err.details);
+          }
+        });
+    }
+
+    // Load Sessions list
+    function loadSessions() {
+      const container = document.getElementById('session-list-container');
+      container.innerHTML = '<div class="loading-spinner">Cargando sesiones...</div>';
+
+      fetch('/api/sessions')
+        .then(handleResponse)
+        .then(sessions => {
+          hideDbErrorBanner();
+          allSessions = sessions;
+          renderSessionList(sessions);
+        })
+        .catch(err => {
+          console.error("Error cargando sesiones:", err);
+          if (err && err.error === "DB_CONNECTION_ERROR") {
+            showDbErrorBanner(err.details);
+            container.innerHTML = '<div class="error-text">Error de conexión a la base de datos.</div>';
+          } else {
+            container.innerHTML = '<div class="error-text">Error al cargar las sesiones.</div>';
+          }
+        });
+    }
+
+    // Filter Sessions based on select dropdown
+    function filterSessions() {
+      const val = document.getElementById('session-status-filter').value;
+      let filtered = allSessions;
+      
+      if (val === 'active') {
+        filtered = allSessions.filter(s => ['active', 'active_analysis', 'active_spec_driven', 'open'].includes(s.status));
+      } else if (val === 'closed') {
+        filtered = allSessions.filter(s => !['active', 'active_analysis', 'active_spec_driven', 'open'].includes(s.status));
+      }
+      
+      renderSessionList(filtered);
+    }
+
+    // Render session items list
+    function renderSessionList(sessions) {
+      const container = document.getElementById('session-list-container');
+      if (!Array.isArray(sessions) || sessions.length === 0) {
+        container.innerHTML = '<div class="empty-list-message">No tienes sesiones activas para este proyecto.</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      sessions.forEach(sess => {
+        const item = document.createElement('div');
+        const isActive = ['active', 'active_analysis', 'active_spec_driven', 'open'].includes(sess.status);
+        const statusClass = isActive ? 'status-active' : 'status-closed';
+        const statusText = isActive ? 'Activo' : 'Cerrado';
+        const isSelected = selectedSession && selectedSession.sessionId === sess.sessionId;
+
+        item.className = `session-item ${isSelected ? 'selected' : ''}`;
+        item.onclick = () => selectSession(sess);
+
+        const dateStr = sess.updatedAt ? new Date(sess.updatedAt).toLocaleString('es-CL') : 'Sin fecha';
+
+        item.innerHTML = `
+          <div class="session-item-header">
+            <span class="session-item-ticket">${sess.ticket || 'GENERAL'}</span>
+            <span class="session-item-status ${statusClass}">${statusText}</span>
+          </div>
+          <div class="session-item-body">
+            <div class="session-item-row">
+              <strong>Proyecto:</strong> <span>${sess.project}</span>
+            </div>
+            <div class="session-item-row">
+              <strong>Rama:</strong> <span class="monospace text-truncate">${sess.branch || 'develop'}</span>
+            </div>
+            <div class="session-item-row" style="margin-top: 4px; font-size: 0.72rem; color: var(--text-muted);">
+              <strong>Modificado:</strong> <span>${dateStr}</span>
+            </div>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Select and fetch Session Details
+    function selectSession(session) {
+      selectedSession = session;
+      
+      // Update selected class in items
+      document.querySelectorAll('.session-item').forEach(el => {
+        el.classList.remove('selected');
+        const ticketEl = el.querySelector('.session-item-ticket');
+        if (ticketEl && ticketEl.textContent === (session.ticket || 'GENERAL')) {
+          el.classList.add('selected');
+        }
+      });
+
+      document.getElementById('session-details-empty').style.display = 'none';
+      const contentPane = document.getElementById('session-details-content');
+      contentPane.style.display = 'block';
+      
+      // Spinner in tables
+      document.getElementById('details-ticket').textContent = session.ticket || 'GENERAL';
+      document.getElementById('details-project').textContent = `Proyecto: ${session.project}`;
+      
+      const isActive = ['active', 'active_analysis', 'active_spec_driven', 'open'].includes(session.status);
+      const badge = document.getElementById('details-status-badge');
+      badge.textContent = isActive ? 'Sesión Activa' : 'Sesión Cerrada';
+      badge.className = isActive ? 'status-badge status-active' : 'status-badge status-closed';
+
+      // Load Phase
+      const phase = session.currentPhase || '';
+      document.querySelectorAll('.phase-step').forEach(step => step.classList.remove('active', 'completed'));
+      
+      if (phase === 'analisis') {
+        document.getElementById('phase-step-analisis').classList.add('active');
+        document.getElementById('phase-progress-line').style.width = '0%';
+      } else if (phase === 'backlog') {
+        document.getElementById('phase-step-analisis').classList.add('completed');
+        document.getElementById('phase-step-backlog').classList.add('active');
+        document.getElementById('phase-progress-line').style.width = '50%';
+      } else if (phase === 'implementacion') {
+        document.getElementById('phase-step-analisis').classList.add('completed');
+        document.getElementById('phase-step-backlog').classList.add('completed');
+        document.getElementById('phase-step-implementacion').classList.add('active');
+        document.getElementById('phase-progress-line').style.width = '100%';
+      } else {
+        document.getElementById('phase-progress-line').style.width = '0%';
+      }
+
+      // Fetch dynamic details
+      fetch(`/api/session-details?ticket=${encodeURIComponent(session.ticket || 'GENERAL')}`)
+        .then(res => res.json())
+        .then(data => {
+          // 1. Checkpoints
+          renderCheckpoints(session.checkpoints || []);
+
+          // 2. Branches
+          renderBranchesTable(data.workingBranches || []);
+
+          // 3. Review findings
+          renderFindingsTable(data.findings || []);
+
+          // 4. Pattern evals
+          renderPatternsTable(data.patterns || []);
+
+          // 5. Peer Discussions & Learnings
+          renderPeerDiscussions(data.peerDiscussions || []);
+          renderLearnings(data.learnings || []);
+
+          // 6. Closures
+          renderClosureTab(data.closure);
+        })
+        .catch(err => {
+          console.error("Error al cargar detalles de la sesión:", err);
+          showToast("Error al consultar detalles de base de datos.", "error");
+        });
+    }
+
+    // Render timeline checkpoints
+    function renderCheckpoints(checkpoints) {
+      const container = document.getElementById('details-checkpoints-list');
+      if (checkpoints.length === 0) {
+        container.innerHTML = '<div class="empty-list-message">No se registraron checkpoints en esta sesión.</div>';
+        return;
+      }
+      
+      container.innerHTML = '';
+      checkpoints.forEach(cp => {
+        const item = document.createElement('div');
+        item.className = 'checkpoint-item';
+        
+        const dateStr = cp.at ? new Date(cp.at).toLocaleString('es-CL') : '';
+        const phaseLabel = cp.phase ? cp.phase.toUpperCase() : 'CHECKPOINT';
+
+        item.innerHTML = `
+          <div class="checkpoint-dot"></div>
+          <div class="checkpoint-body">
+            <div class="checkpoint-meta">
+              <span class="checkpoint-phase">${phaseLabel}</span>
+              <span class="checkpoint-time">${dateStr}</span>
+            </div>
+            <p class="checkpoint-text">${cp.summary || cp.text || ''}</p>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Render Git Branches Table
+    function renderBranchesTable(branches) {
+      const tbody = document.getElementById('details-branches-tbody');
+      if (branches.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="table-empty">No hay ramas registradas para este ticket.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      branches.forEach(b => {
+        const row = document.createElement('tr');
+        const isActive = b.status === 'active';
+        const dateStr = b.updatedAt ? new Date(b.updatedAt).toLocaleString('es-CL') : '-';
+
+        row.innerHTML = `
+          <td class="monospace">${b.branch}</td>
+          <td class="monospace">${b.base || '-'}</td>
+          <td><span class="badge badge-accent">${b.role || 'feature'}</span></td>
+          <td><span class="badge ${isActive ? 'badge-success' : 'badge-neutral'}">${b.status}</span></td>
+          <td>${b.notes || ''}</td>
+          <td>${dateStr}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Render Findings Table
+    function renderFindingsTable(findings) {
+      const tbody = document.getElementById('details-findings-tbody');
+      if (findings.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="table-empty">No se encontraron hallazgos de código para este ticket.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      findings.forEach(f => {
+        const row = document.createElement('tr');
+        let sevClass = 'badge-neutral';
+        if (f.severity === 'high') sevClass = 'badge-danger';
+        else if (f.severity === 'medium') sevClass = 'badge-warning';
+        else if (f.severity === 'low') sevClass = 'badge-success';
+
+        row.innerHTML = `
+          <td><span class="badge ${sevClass}">${f.severity.toUpperCase()}</span></td>
+          <td class="monospace">${f.location || 'Global'}</td>
+          <td><strong>${f.summary}</strong></td>
+          <td>${f.source || 'pfi-cr-analyst'}</td>
+          <td><span class="badge badge-neutral">${f.status || 'open'}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Render Patterns Table
+    function renderPatternsTable(patterns) {
+      const tbody = document.getElementById('details-patterns-tbody');
+      if (patterns.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="table-empty">No hay evaluaciones de patrones registradas para este ticket.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      patterns.forEach(p => {
+        const row = document.createElement('tr');
+        const sources = Array.isArray(p.sources) ? p.sources.join(', ') : (p.sources || '');
+
+        row.innerHTML = `
+          <td class="monospace"><strong>${p.component}</strong></td>
+          <td><span class="badge badge-neutral">${p.declared || 'N/A'}</span></td>
+          <td><span class="badge badge-accent">${p.real || 'N/A'}</span></td>
+          <td><small>${sources}</small></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Render Peer Discussions
+    function renderPeerDiscussions(discussions) {
+      const container = document.getElementById('details-peer-list');
+      if (discussions.length === 0) {
+        container.innerHTML = '<div class="empty-list-message">No hay debates pre-HITL registrados.</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      discussions.forEach(disc => {
+        const div = document.createElement('div');
+        div.className = 'peer-discussion-card';
+
+        const dateStr = disc.createdAt ? new Date(disc.createdAt).toLocaleString('es-CL') : '';
+        const verdictClass = disc.verdict === 'APTO_PROPUESTA' ? 'badge-success' : 'badge-warning';
+
+        let changesListHtml = '';
+        if (disc.requiredChanges && disc.requiredChanges.length > 0) {
+          changesListHtml = `
+            <div style="margin-top: 10px;">
+              <strong>Cambios Requeridos:</strong>
+              <ul style="padding-left: 18px; margin-top: 4px;">
+                ${disc.requiredChanges.map(c => `<li>${c}</li>`).join('')}
+              </ul>
+            </div>
+          `;
+        }
+
+        let bulletsHtml = '';
+        if (disc.feedbackBullets && disc.feedbackBullets.length > 0) {
+          bulletsHtml = `
+            <div style="margin-top: 10px;">
+              <strong>Feedback Bullets:</strong>
+              <ul style="padding-left: 18px; margin-top: 4px;">
+                ${disc.feedbackBullets.map(b => `<li>${b}</li>`).join('')}
+              </ul>
+            </div>
+          `;
+        }
+
+        div.innerHTML = `
+          <div class="peer-header">
+            <strong>${disc.source || 'pfi-tl-peer-daniel'}</strong>
+            <span class="badge ${verdictClass}">${disc.verdict || 'REVISADO'}</span>
+          </div>
+          <div class="peer-time" style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px;">${dateStr}</div>
+          <p>${disc.propuestaSummary || disc.summary || ''}</p>
+          ${changesListHtml}
+          ${bulletsHtml}
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    // Render Learnings Bullet List
+    function renderLearnings(learnings) {
+      const container = document.getElementById('details-learnings-list');
+      if (learnings.length === 0) {
+        container.innerHTML = '<div class="empty-list-message">No se registraron aprendizajes activos para este ticket.</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      learnings.forEach(l => {
+        const li = document.createElement('li');
+        const dateStr = l.createdAt ? new Date(l.createdAt).toLocaleDateString('es-CL') : '';
+        li.innerHTML = `
+          <strong>[${l.category || 'General'} - ${dateStr}]</strong> ${l.text}
+          ${l.source ? `<span class="learning-source-tag">Fuente: ${l.source}</span>` : ''}
+        `;
+        container.appendChild(li);
+      });
+    }
+
+    // Render Closure Tab Info
+    function renderClosureTab(closure) {
+      const container = document.getElementById('details-closure-content');
+      if (!closure) {
+        container.innerHTML = `
+          <div class="empty-list-message">
+            <span style="font-size:2rem; display:block; margin-bottom:10px;">🔓</span>
+            Este ticket aún está abierto. No se ha registrado cierre HITL.
+          </div>
+        `;
+        return;
+      }
+
+      const dateStr = closure.closedAt ? new Date(closure.closedAt).toLocaleString('es-CL') : '-';
+      const expireStr = closure.expiresAt ? new Date(closure.expiresAt).toLocaleDateString('es-CL') : 'No expira';
+
+      let branchesHtml = (closure.branches || []).map(b => `<code class="monospace">${b}</code>`).join(', ') || '-';
+      let endpointsHtml = (closure.endpoints || []).map(e => `<code class="monospace">${e}</code>`).join(', ') || '-';
+
+      let learningsHtml = '';
+      if (closure.learnings && closure.learnings.length > 0) {
+        learningsHtml = `
+          <div class="closure-section" style="margin-top: 15px;">
+            <h4>Aprendizajes del Cierre</h4>
+            <ul class="learnings-list-bullets" style="margin-top: 8px;">
+              ${closure.learnings.map(l => `<li>${l}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      container.innerHTML = `
+        <div class="closure-summary-card">
+          <div class="closure-header-row">
+            <h3>Cierre HITL Registrado</h3>
+            <span class="badge badge-success">CERRADO</span>
+          </div>
+          
+          <div class="closure-meta-grid" style="margin-top: 15px;">
+            <div class="closure-meta-item">
+              <span class="closure-lbl">Fecha de Cierre</span>
+              <span class="closure-val">${dateStr}</span>
+            </div>
+            <div class="closure-meta-item">
+              <span class="closure-lbl">Expiración Poda (ExpiresAt)</span>
+              <span class="closure-val">${expireStr}</span>
+            </div>
+            <div class="closure-meta-item">
+              <span class="closure-lbl">Veredicto Final</span>
+              <span class="closure-val"><strong>${closure.verdict || 'APROBADO'}</strong></span>
+            </div>
+            <div class="closure-meta-item">
+              <span class="closure-lbl">Origen</span>
+              <span class="closure-val">${closure.hitlSource || 'user'}</span>
+            </div>
+          </div>
+
+          <div class="closure-section" style="margin-top: 20px;">
+            <h4>Resumen de Cierre</h4>
+            <p style="margin-top: 6px; line-height:1.5;">${closure.summary || 'Sin resumen registrado.'}</p>
+          </div>
+
+          <div class="closure-section" style="margin-top: 15px;">
+            <h4>Ramas Git Consolidadas</h4>
+            <div style="margin-top: 6px;">${branchesHtml}</div>
+          </div>
+
+          <div class="closure-section" style="margin-top: 15px;">
+            <h4>Endpoints Modificados / Nuevos</h4>
+            <div style="margin-top: 6px;">${endpointsHtml}</div>
+          </div>
+
+          ${learningsHtml}
+        </div>
+      `;
+    }
+
+    // Load Knowledge sources
+    function loadKnowledgeSources() {
+      fetch('/api/knowledge-sources')
+        .then(handleResponse)
+        .then(sources => {
+          hideDbErrorBanner();
+          allKnowledge = sources;
+          
+          // Populate categories in filter
+          const filter = document.getElementById('knowledge-category-filter');
+          const currentVal = filter.value;
+          const categories = [...new Set(sources.map(s => s.category).filter(Boolean))];
+          
+          filter.innerHTML = '<option value="all">Todas las categorías</option>';
+          categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            filter.appendChild(opt);
+          });
+          filter.value = currentVal;
+
+          renderKnowledgeTable(sources);
+        })
+        .catch(err => {
+          console.error("Error cargando base de conocimiento:", err);
+          if (err && err.error === "DB_CONNECTION_ERROR") {
+            showDbErrorBanner(err.details);
+          } else {
+            showToast("Error al cargar la base de conocimiento.", "error");
+          }
+        });
+    }
+
+    // Filter Knowledge list
+    function filterKnowledge() {
+      const q = document.getElementById('knowledge-search').value.toLowerCase().trim();
+      const cat = document.getElementById('knowledge-category-filter').value;
+
+      let filtered = allKnowledge;
+      
+      if (cat !== 'all') {
+        filtered = filtered.filter(s => s.category === cat);
+      }
+      
+      if (q) {
+        filtered = filtered.filter(s => {
+          const name = (s.name || '').toLowerCase();
+          const id = (s.sourceId || '').toLowerCase();
+          const tags = (s.tags || []).join(' ').toLowerCase();
+          return name.includes(q) || id.includes(q) || tags.includes(q);
+        });
+      }
+
+      renderKnowledgeTable(filtered);
+    }
+
+    // Render Knowledge sources table
+    function renderKnowledgeTable(sources) {
+      const tbody = document.getElementById('knowledge-tbody');
+      if (sources.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="table-empty">No se encontraron fuentes de conocimiento.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = '';
+      sources.forEach(src => {
+        const row = document.createElement('tr');
+        const tagsHtml = (src.tags || []).map(t => `<span class="tag-bubble">${t}</span>`).join(' ') || '-';
+        
+        row.innerHTML = `
+          <td><strong>${src.name}</strong></td>
+          <td class="monospace">${src.sourceId}</td>
+          <td><span class="badge badge-accent">${src.category}</span></td>
+          <td style="text-align:center;">${src.priority || 1}</td>
+          <td>${tagsHtml}</td>
+          <td>
+            <span class="badge ${src.enabled ? 'badge-success' : 'badge-danger'}">
+              ${src.enabled ? 'Habilitado' : 'Deshabilitado'}
+            </span>
+          </td>
+          <td>
+            ${src.url 
+              ? `<a href="${src.url}" target="_blank" class="table-link">Ver Documentación ↗</a>` 
+              : '<span class="text-muted">Sin enlace</span>'
+            }
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Modal Control
+    function openAddKnowledgeModal() {
+      document.getElementById('add-knowledge-modal').style.display = 'flex';
+      // Reset form
+      document.getElementById('add-knowledge-form').reset();
+    }
+
+    function closeAddKnowledgeModal() {
+      document.getElementById('add-knowledge-modal').style.display = 'none';
+    }
+
+    // Submit knowledge source
+    function submitKnowledge(e) {
+      e.preventDefault();
+      
+      const sourceId = document.getElementById('new-source-id').value.trim();
+      const name = document.getElementById('new-name').value.trim();
+      const category = document.getElementById('new-category').value;
+      const priority = Number(document.getElementById('new-priority').value || 1);
+      const url = document.getElementById('new-url').value.trim();
+      const tags = document.getElementById('new-tags').value.trim();
+      const enabled = document.getElementById('new-enabled').checked;
+
+      // Submit Button Loading
+      const submitBtn = document.getElementById('btn-submit-knowledge');
+      submitBtn.disabled = true;
+      submitBtn.innerText = 'Guardando...';
+
+      fetch('/api/knowledge-sources', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sourceId,
+          name,
+          category,
+          priority,
+          url,
+          tags,
+          enabled
+        })
+      })
+      .then(res => {
+        if (!res.ok) {
+          return res.json().then(data => { throw new Error(data.error || "Error al agregar la fuente."); });
+        }
+        return res.json();
+      })
+      .then(data => {
+        showToast("¡Base de conocimiento agregada correctamente!");
+        closeAddKnowledgeModal();
+        loadKnowledgeSources();
+        fetchDashboardSummary(); // Update counters
+      })
+      .catch(err => {
+        showToast(err.message, "error");
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerText = 'Guardar Fuente';
+      });
+    }
+  </script>
+</body>
+</html>

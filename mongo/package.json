@@ -12,7 +12,8 @@
     "migrate-chroma": "node migrate-to-chroma.js",
     "query": "node query.js",
     "ingest": "node ingest.js",
-    "prune": "node prune.js"
+    "prune": "node prune.js",
+    "dashboard": "node dashboard.js"
   },
   "dependencies": {
     "@chroma-core/default-embed": "^0.1.8",

@@ -1,0 +1,37 @@
+# 🧠 Instrucciones y Reglas de Arquitectura IATL
+
+Estás ejecutando en el runtime: **cursor**
+
+## 📋 Información del Proyecto
+- **Proyecto Activo:** pfi-dashboard-test
+- **Contexto:** Backend PFI: lambdas NestJS hexagonales, API Gateway, integración legacy Aduana
+- **Sprint Activo:** No
+- **Arquitectura de Base:** layered
+- **Arquitectura Objetivo:** hexagonal-lambda-nestjs
+
+## 📂 Ubicaciones del Entorno
+- **Agentes Globales:** `/home/csar/.cursor/agents`
+- **Hub de Conocimiento:** `/home/csar/.cursor/iatl-knowledge`
+
+## 🛠️ Comandos del Hub Disponibles
+- **Iniciar Dashboard de Control (Visualizar Sesiones y Base de Conocimiento):**
+  ```bash
+  node /home/csar/.cursor/iatl-knowledge/dashboard.js
+  ```
+- **Ver Configuración / Iniciar Sesión:**
+  ```bash
+  node /home/csar/.cursor/iatl-knowledge/query.js --project-config
+  ```
+- **Clasificar Ticket / Tarea:**
+  ```bash
+  node /home/csar/.cursor/iatl-knowledge/query.js --classify-ticket --summary "..." --issue-type Story
+  ```
+- **Sincronizar Skills desde la Base Centralizada:**
+  ```bash
+  node /home/csar/.cursor/iatl-knowledge/query.js --sync-skills
+  ```
+- **Revisión de Código y Arquitectura (COE Review) [Autónomo]:**
+  El módulo de revisión de código estático (`coe-review.js`) es totalmente autónomo e independiente de cualquier extensión del IDE o herramienta de IA de terceros. Se ejecuta tras la instalación y bajo demanda:
+  ```bash
+  node /home/csar/.cursor/iatl-knowledge/coe-review.js
+  ```

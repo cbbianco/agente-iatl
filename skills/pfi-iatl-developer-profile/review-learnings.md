@@ -77,4 +77,11 @@ Archivo vivo (vista humana). **Índice consultable:** `~/.cursor/iatl-knowledge/
 
 ## Correcciones de Razonamiento HITL
 
+
+## Correcciones de Razonamiento HITL (PFI-1238 - 2026-06-29)
+
+- **Error de razonamiento:** Suponer que el origen del marcaje se completaba en BD por default.
+  **Corrección del HITL:** Se debe inyectar el origen obligatoriamente en el API Gateway.
+  **Nueva regla operativa:** Nunca omitir origen en auditorías de marcajes.
+
 <!-- Nuevas entradas: categoría + YYYY-MM-DD + PFI-XXXX. @iatl podará semanalmente. -->
