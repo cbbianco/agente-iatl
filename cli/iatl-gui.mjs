@@ -241,6 +241,25 @@ const htmlTemplate = `<!DOCTYPE html>
       box-shadow: 0 0 0 3px var(--primary-glow);
     }
 
+    select.form-control,
+    .select-control {
+      min-height: 46px;
+      line-height: 1.45;
+      padding: 11px 42px 11px 16px;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239aa3b8' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 14px;
+    }
+
+    select.form-control option {
+      background: #111827;
+      color: #f3f4f6;
+      padding: 8px;
+    }
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -703,14 +722,21 @@ const htmlTemplate = `<!DOCTYPE html>
           <form id="wizard-form" onsubmit="event.preventDefault();">
             <!-- STEP 1: Detalles de la página -->
             <div class="wizard-step active" id="step-1">
-              <h3 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 1: Información de la Landing</h3>
+              <h3 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 1: Tipo y contenido de la Landing</h3>
+              <div class="form-group">
+                <label class="form-label" for="buildLandingType">Tipo de Landing Page</label>
+                <select id="buildLandingType" class="form-control select-control" onchange="onGuiLandingTypeChange()">
+                  <option value="curriculum">Currículum vitae</option>
+                </select>
+                <p id="buildLandingTypeHint" class="form-hint">Landing personal tipo CV: perfil, experiencia, educación y contacto.</p>
+              </div>
               <div class="form-group">
                 <label class="form-label" for="buildPageContext">Contexto de la Página</label>
-                <textarea class="form-control" id="buildPageContext" rows="3" placeholder="Describe el propósito de la página, ej: SaaS para optimizar flujos de trabajo usando IA"></textarea>
+                <textarea class="form-control" id="buildPageContext" rows="3" placeholder="Describe el propósito de la página">Página profesional tipo curriculum vitae para presentar trayectoria, habilidades técnicas y datos de contacto</textarea>
               </div>
               <div class="form-group">
                 <label class="form-label" for="buildPageTitle">Título de la Página</label>
-                <input type="text" class="form-control" id="buildPageTitle" value="WorkFlowAI" placeholder="ej. WorkFlowAI">
+                <input type="text" class="form-control" id="buildPageTitle" value="Mi Currículum" placeholder="ej. Mi Currículum">
               </div>
             </div>
 
@@ -977,6 +1003,16 @@ const htmlTemplate = `<!DOCTYPE html>
       document.getElementById('publish-fields').style.display = isNone ? 'none' : 'block';
     }
 
+    function onGuiLandingTypeChange() {
+      const id = document.getElementById('buildLandingType').value;
+      const hint = document.getElementById('buildLandingTypeHint');
+      if (id === 'curriculum') {
+        hint.textContent = 'Landing personal tipo CV: perfil, experiencia, educación y contacto.';
+        document.getElementById('buildPageTitle').value = 'Mi Currículum';
+        document.getElementById('buildPageContext').value = 'Página profesional tipo curriculum vitae para presentar trayectoria, habilidades técnicas y datos de contacto';
+      }
+    }
+
     function startBuild() {
       if (eventSource) {
         eventSource.close();
@@ -987,6 +1023,7 @@ const htmlTemplate = `<!DOCTYPE html>
       document.getElementById('btn-wizard-prev').disabled = true;
       document.getElementById('btn-wizard-next').disabled = true;
 
+      const landingPageType = document.getElementById('buildLandingType').value;
       const pageContext = document.getElementById('buildPageContext').value;
       const pageTitle = document.getElementById('buildPageTitle').value;
       const assetOption = document.querySelector('input[name="assetOption"]:checked').value;
@@ -1000,6 +1037,7 @@ const htmlTemplate = `<!DOCTYPE html>
 
       const params = new URLSearchParams({
         type: 'landing-page',
+        landingPageType,
         pageContext,
         pageTitle,
         assetOption,
@@ -1081,6 +1119,7 @@ const server = createServer((req, res) => {
       const type = url.searchParams.get("type") || "landing-page";
       args = ["cli/iatl-install.mjs", "--non-interactive", "--build", type];
 
+      const landingPageType = url.searchParams.get("landingPageType");
       const pageContext = url.searchParams.get("pageContext");
       const pageTitle = url.searchParams.get("pageTitle");
       const assetOption = url.searchParams.get("assetOption");
@@ -1090,6 +1129,7 @@ const server = createServer((req, res) => {
       const publishBranch = url.searchParams.get("publishBranch");
       const publishToken = url.searchParams.get("publishToken");
 
+      if (landingPageType) args.push("--landing-page-type", landingPageType);
       if (pageContext) args.push("--page-context", pageContext);
       if (pageTitle) args.push("--page-title", pageTitle);
       if (assetOption) args.push("--asset-option", assetOption);

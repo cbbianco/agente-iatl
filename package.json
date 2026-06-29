@@ -1,6 +1,6 @@
 {
   "name": "pfi-agent-architecture",
-  "version": "0.13.0",
+  "version": "0.13.2",
   "private": true,
   "description": "Arquitectura multiagente IATL — instalador portable y documentación",
   "type": "module",

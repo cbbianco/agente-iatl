@@ -5,6 +5,41 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.13.2] — 2026-06-29
+
+**Tema:** Tipos de landing-page (curriculum) + estilos select en modal/dashboard.
+
+### Añadido
+
+- **`cli/landing-page-types.json`** — catálogo de tipos de landing (primero: `curriculum`)
+- **`cli/lib/landing-page-types.mjs`** — helper de tipos para instalador y build
+- **API** `/api/landing-page-types` en dashboard
+- **Asset** `layout-curriculum.html` generado por `build-landing-page.mjs`
+- Selector **Tipo de Landing Page** en dashboard (tab Construcción) y GUI (`install:gui`)
+
+### Cambiado
+
+- **`mongo/scripts/dashboard.css`** — estilos `select.form-control` legibles (sin texto recortado); modal con scroll
+- **`cli/iatl-install.mjs`** — flag `--landing-page-type`; flujo interactivo pregunta tipo antes de contexto
+- **`cli/lib/build-landing-page.mjs`** — paridad por tipo; defaults curriculum en features
+
+---
+
+## [0.13.1] — 2026-06-28
+
+**Tema:** Bloqueo del dashboard si IATL no está instalado en el runtime.
+
+### Añadido
+
+- **`cli/lib/runtime-install.mjs`** — verificación de hub instalado por runtime
+- **`mongo/scripts/install-required.html`** — página informativa en el navegador con instrucciones de instalación
+
+### Cambiado
+
+- **`cli/run-dashboard.mjs`** — si el runtime solicitado no tiene agente instalado, no arranca el dashboard ni hace fallback a otro IDE; muestra mensaje en terminal + página web. Modo `--dev` solo para desarrollo local del repo.
+
+---
+
 ## [0.13.0] — 2026-06-28
 
 **Tema:** Dashboard IATL multi-runtime (Antigravity/Cursor/…) — métricas por proyecto, proyectos asignados, construcción autónoma y UX pegajosa.

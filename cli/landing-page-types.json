@@ -1,0 +1,12 @@
+{
+  "landingPageTypes": [
+    {
+      "id": "curriculum",
+      "label": "Currículum vitae",
+      "description": "Landing personal tipo CV: perfil, experiencia, educación, habilidades y contacto",
+      "defaultTitle": "Mi Currículum",
+      "defaultContext": "Página profesional tipo curriculum vitae para presentar trayectoria, habilidades técnicas y datos de contacto",
+      "layoutAsset": "layout-curriculum.html"
+    }
+  ]
+}

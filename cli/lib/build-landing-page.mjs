@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { getLandingPageType } from "./landing-page-types.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,10 +12,12 @@ function ensureDir(path) {
 }
 
 export async function buildLandingPageMcp(options = {}) {
+  const landingPageType = options.landingPageType ?? "curriculum";
+  const typeMeta = getLandingPageType(landingPageType);
   const mcpDir = join(REPO_ROOT, "mcp-landing-page");
   const assetsDir = join(mcpDir, "assets");
 
-  console.log("🛠️  Iniciando construcción autónoma del MCP de Landing Pages...\n");
+  console.log(`🛠️  Iniciando construcción autónoma del MCP de Landing Pages (${typeMeta.label})...\n`);
 
   ensureDir(mcpDir);
   ensureDir(assetsDir);
@@ -38,14 +41,16 @@ export async function buildLandingPageMcp(options = {}) {
 
   // Escribir config.json del MCP
   const configContent = {
-    pageContext: options.pageContext ?? "SaaS de workflows con IA",
-    pageTitle: options.pageTitle ?? "WorkFlowAI",
+    landingPageType,
+    pageContext: options.pageContext ?? typeMeta.defaultContext,
+    pageTitle: options.pageTitle ?? typeMeta.defaultTitle,
     assetOption: options.assetOption ?? "generate",
     customAssetPath: options.customAssetPath ?? "",
     publishOption: options.publishOption ?? "none",
     publishRepo: options.publishRepo ?? "",
     publishBranch: options.publishBranch ?? "gh-pages",
-    publishToken: options.publishToken ?? ""
+    publishToken: options.publishToken ?? "",
+    layoutAsset: typeMeta.layoutAsset,
   };
   writeFileSync(join(mcpDir, "config.json"), JSON.stringify(configContent, null, 2) + "\n", "utf8");
   console.log("✅ config.json creado.");
@@ -247,14 +252,23 @@ function handleRequest(req) {
         else if (theme === "glass") themeClass = "theme-glass";
         else if (theme === "neon") themeClass = "theme-neon";
 
-        // Leer HTML base
-        let html = readFileSync(join(__dirname, "assets", "layout.html"), "utf8");
+        // Leer HTML base según tipo configurado
+        const layoutFile = config.landingPageType === "curriculum"
+          ? "layout-curriculum.html"
+          : "layout.html";
+        let html = readFileSync(join(__dirname, "assets", layoutFile), "utf8");
 
         // Construir HTML de características
         let featuresHtml = "";
         if (features.length === 0) {
           // Defaults if none provided
-          const defaults = [
+          const defaults = config.landingPageType === "curriculum"
+            ? [
+              { title: "Experiencia profesional", description: "Trayectoria en desarrollo backend, arquitectura hexagonal y liderazgo técnico.", icon: "💼" },
+              { title: "Educación", description: "Formación académica y certificaciones relevantes al perfil.", icon: "🎓" },
+              { title: "Habilidades", description: "Stack técnico, metodologías y herramientas dominadas.", icon: "🛠️" }
+            ]
+            : [
             { title: "Arquitectura IATL", description: "Estructuras hexagonales y SOLID construidas con criterios de Team Lead.", icon: "⚡" },
             { title: "Ejecución Autónoma", description: "Gates automatizados de análisis e implementación sin intervención constante.", icon: "🤖" },
             { title: "Hub de Conocimiento", description: "Recuperación semántica basada en Chroma y persistencia robusta en Mongo.", icon: "📚" }
@@ -449,6 +463,53 @@ function handleRequest(req) {
 `;
   writeFileSync(join(assetsDir, "layout.html"), layoutContent, "utf8");
   console.log("✅ assets/layout.html creado.");
+
+  const curriculumLayoutContent = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{TITLE}}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style id="theme-style"></style>
+</head>
+<body class="{{THEME_CLASS}} cv-page">
+  <header class="hero cv-hero">
+    <div class="hero-container">
+      <p class="cv-kicker">Currículum vitae</p>
+      <h1 class="hero-title">{{HERO_TITLE}}</h1>
+      <p class="hero-subtitle">{{HERO_SUBTITLE}}</p>
+      <div class="hero-actions">
+        <a href="{{CTA_URL}}" class="btn btn-lg btn-primary">{{CTA_TEXT}}</a>
+      </div>
+    </div>
+  </header>
+  <main>
+    <section class="section">
+      <div class="section-container">
+        <h2 class="section-title">Perfil profesional</h2>
+        <div class="grid grid-3">{{FEATURES_GRID}}</div>
+      </div>
+    </section>
+    <section class="section section-alt">
+      <div class="section-container">
+        <h2 class="section-title">Referencias</h2>
+        <div class="grid grid-2">{{TESTIMONIALS_GRID}}</div>
+      </div>
+    </section>
+  </main>
+  <footer class="footer">
+    <div class="footer-container">
+      <p>&copy; 2026 {{TITLE}}. Generado con MCP IATL Landing-Page (tipo curriculum).</p>
+    </div>
+  </footer>
+</body>
+</html>
+`;
+  writeFileSync(join(assetsDir, "layout-curriculum.html"), curriculumLayoutContent, "utf8");
+  console.log("✅ assets/layout-curriculum.html creado (tipo curriculum).");
 
   // 4. Escribir assets/styles.css
   const stylesContent = `:root {

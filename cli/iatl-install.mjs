@@ -18,6 +18,7 @@ import { join } from "node:path";
 import { RUNTIME_CHOICES } from "./lib/paths.mjs";
 import { getRepoRoot, installArtifacts, runHubSetup, writeIDEProjectHints } from "./lib/install-target.mjs";
 import { buildLandingPageMcp } from "./lib/build-landing-page.mjs";
+import { LANDING_PAGE_TYPES, getLandingPageType } from "./lib/landing-page-types.mjs";
 
 function parseArgs(argv) {
   const out = { nonInteractive: false };
@@ -48,6 +49,7 @@ function parseArgs(argv) {
     else if (a === "--publish-repo" && argv[i + 1] !== undefined) out.publishRepo = argv[++i];
     else if (a === "--publish-branch" && argv[i + 1] !== undefined) out.publishBranch = argv[++i];
     else if (a === "--publish-token" && argv[i + 1] !== undefined) out.publishToken = argv[++i];
+    else if (a === "--landing-page-type" && argv[i + 1] !== undefined) out.landingPageType = argv[++i];
   }
   return out;
 }
@@ -88,9 +90,11 @@ async function main() {
   console.log(`Repo arquitectura: ${getRepoRoot()}\n`);
 
   if (args.build === "landing-page") {
+    const typeMeta = getLandingPageType(args.landingPageType ?? "curriculum");
     await buildLandingPageMcp({
-      pageContext: args.pageContext,
-      pageTitle: args.pageTitle,
+      landingPageType: typeMeta.id,
+      pageContext: args.pageContext ?? typeMeta.defaultContext,
+      pageTitle: args.pageTitle ?? typeMeta.defaultTitle,
       assetOption: args.assetOption,
       customAssetPath: args.customAssetPath,
       publishOption: args.publishOption,
@@ -144,15 +148,21 @@ async function main() {
       ];
       const selectedBuild = await askChoice(rl, "Elige una opción de construcción", buildChoices, "landing-page");
       if (selectedBuild === "landing-page") {
+        const typeChoices = LANDING_PAGE_TYPES.map((t) => ({
+          value: t.id,
+          label: `${t.label} — ${t.description}`,
+        }));
+        const landingPageType = await askChoice(rl, "a) Tipo de landing page", typeChoices, "curriculum");
+        const typeMeta = getLandingPageType(landingPageType);
         console.log("\n--- Configuración de la Landing Page ---");
-        const pageContext = await ask(rl, "a) Describe el contexto de la página (ej. SaaS de workflows con IA)", "SaaS de workflows con IA");
-        const pageTitle = await ask(rl, "b) Título de la página", "WorkFlowAI");
+        const pageContext = await ask(rl, "b) Describe el contexto de la página", typeMeta.defaultContext);
+        const pageTitle = await ask(rl, "c) Título de la página", typeMeta.defaultTitle);
         
         const assetChoices = [
           { value: "generate", label: "Generar asset apropiado al desarrollo (Autónomo)" },
           { value: "custom", label: "Usar un asset de estilos/HTML específico" }
         ];
-        const assetOption = await askChoice(rl, "c) Selección de assets", assetChoices, "generate");
+        const assetOption = await askChoice(rl, "d) Selección de assets", assetChoices, "generate");
         let customAssetPath = "";
         if (assetOption === "custom") {
           customAssetPath = await ask(rl, "Indique la ruta del archivo de estilos o HTML", "styles.css");
@@ -163,7 +173,7 @@ async function main() {
           { value: "github", label: "Publicar en GitHub Pages" },
           { value: "gitlab", label: "Publicar en GitLab Pages" }
         ];
-        const publishOption = await askChoice(rl, "e) Opción de publicación autónoma", publishChoices, "none");
+        const publishOption = await askChoice(rl, "f) Opción de publicación autónoma", publishChoices, "none");
         let publishRepo = "";
         let publishBranch = "";
         let publishToken = "";
@@ -176,6 +186,7 @@ async function main() {
         
         await rl.close();
         await buildLandingPageMcp({
+          landingPageType: typeMeta.id,
           pageContext,
           pageTitle,
           assetOption,

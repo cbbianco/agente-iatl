@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IATL — Instalación requerida</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: radial-gradient(ellipse at top, #1a1f35 0%, #0a0d14 70%);
+      color: #e8ecf4;
+      padding: 24px;
+    }
+    .card {
+      max-width: 560px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 40px 36px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    }
+    .icon { font-size: 3rem; margin-bottom: 16px; }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #fff;
+    }
+    p {
+      color: #9aa3b8;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+    .runtime-badge {
+      display: inline-block;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    pre {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 16px;
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      color: #7ee787;
+      overflow-x: auto;
+      margin-bottom: 12px;
+      line-height: 1.5;
+    }
+    .hint {
+      font-size: 0.82rem;
+      color: #6b7280;
+    }
+    .hint code {
+      color: #9cdcfe;
+      background: rgba(255,255,255,0.05);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">⚙️</div>
+    <span class="runtime-badge">{{RUNTIME_LABEL}}</span>
+    <h1>Instala IATL antes de usar el dashboard</h1>
+    <p>
+      El agente IATL no está instalado para este entorno. El dashboard solo está disponible
+      cuando el hub operativo del runtime está configurado en tu máquina.
+    </p>
+    <p>Ejecuta en la terminal desde el repo de arquitectura:</p>
+    <pre>{{INSTALL_CMD}}</pre>
+    <p class="hint">Alternativa gráfica: <code>npm run install:gui</code></p>
+    <p class="hint">Después de instalar: <code>npm run dashboard</code></p>
+  </div>
+</body>
+</html>

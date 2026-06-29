@@ -76,6 +76,8 @@ node cli/run-dashboard.mjs --runtime antigravity
 
 Abre `http://127.0.0.1:8030` — pestañas: Overview, Sesiones, Conocimiento, Agentes, **Construcción** (landing page), **Proyectos** (asignación HITL). Configuración desde el ícono ⚙️ en el sidebar (modal).
 
+> Si IATL **no está instalado** para el runtime indicado, el launcher muestra un mensaje en terminal y una página informativa en el navegador con el comando de instalación. No se usa el hub de otro IDE como sustituto.
+
 ### Inicio rápido (Portal GUI)
 
 Puedes instalar y configurar el entorno de forma completamente visual con nuestro nuevo portal web interactivo (diseño *glassmorphic* y logs en tiempo real):

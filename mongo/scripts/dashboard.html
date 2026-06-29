@@ -489,14 +489,21 @@
             <form id="build-wizard-form" onsubmit="event.preventDefault();">
               <!-- STEP 1: Detalles de la página -->
               <div class="wizard-step active" id="build-step-1">
-                <h4 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 1: Información de la Landing</h4>
+                <h4 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 1: Tipo y contenido de la Landing</h4>
                 <div class="form-group" style="margin-bottom: 20px;">
-                  <label class="form-label" for="buildPageContext" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Contexto de la Página</label>
-                  <textarea class="form-control" id="buildPageContext" rows="3" style="width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: 8px; color: #ffffff; font-family: inherit; font-size: 0.92rem; transition: var(--transition); resize: vertical;" placeholder="Describe el propósito de la página, ej: SaaS para optimizar flujos de trabajo usando IA">SaaS de workflows con IA</textarea>
+                  <label class="form-label" for="buildLandingType">Tipo de Landing Page</label>
+                  <select id="buildLandingType" class="form-control select-control" onchange="onBuildLandingTypeChange()" required>
+                    <option value="curriculum">Currículum vitae</option>
+                  </select>
+                  <p id="buildLandingTypeHint" class="field-hint">Landing personal tipo CV: perfil, experiencia, educación y contacto.</p>
                 </div>
                 <div class="form-group" style="margin-bottom: 20px;">
-                  <label class="form-label" for="buildPageTitle" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Título de la Página</label>
-                  <input type="text" class="form-control" id="buildPageTitle" value="WorkFlowAI" style="width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: 8px; color: #ffffff; font-family: inherit; font-size: 0.92rem; transition: var(--transition);" placeholder="ej. WorkFlowAI">
+                  <label class="form-label" for="buildPageContext">Contexto de la Página</label>
+                  <textarea class="form-control" id="buildPageContext" rows="3" placeholder="Describe el propósito de la página">Página profesional tipo curriculum vitae para presentar trayectoria, habilidades técnicas y datos de contacto</textarea>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label class="form-label" for="buildPageTitle">Título de la Página</label>
+                  <input type="text" class="form-control" id="buildPageTitle" value="Mi Currículum" placeholder="ej. Mi Currículum">
                 </div>
               </div>
 
@@ -609,7 +616,7 @@
         <div class="modal-body">
           <div class="form-group" style="margin-bottom: 20px;">
             <label class="form-label" for="cfg-project-select" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Proyecto Asignado</label>
-            <select id="cfg-project-select" class="form-control select-control" onchange="onProjectSelectChange()" required style="width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: 8px; color: #ffffff; font-family: inherit; font-size: 0.92rem;">
+            <select id="cfg-project-select" class="form-control select-control" onchange="onProjectSelectChange()" required>
               <option value="pfi-backend-core">pfi-backend-core (Backend PFI)</option>
               <option value="Engine Render">Engine Render (Render Dinámico)</option>
             </select>
@@ -792,6 +799,7 @@
         loadAgentPerformance();
       } else if (tabId === 'build') {
         updateBuildWizardProgress();
+        loadLandingPageTypes();
       } else if (tabId === 'projects') {
         loadAssignedProjects();
       }
@@ -2015,10 +2023,54 @@
       document.getElementById('build-publish-fields').style.display = publishVal !== 'none' ? 'block' : 'none';
     }
 
+    let buildLandingTypesCache = [];
+
+    async function loadLandingPageTypes() {
+      const select = document.getElementById('buildLandingType');
+      try {
+        const res = await fetch('/api/landing-page-types');
+        const data = await res.json();
+        buildLandingTypesCache = data.types || [];
+        select.innerHTML = '';
+        buildLandingTypesCache.forEach((t) => {
+          const opt = document.createElement('option');
+          opt.value = t.id;
+          opt.textContent = t.label;
+          select.appendChild(opt);
+        });
+        onBuildLandingTypeChange();
+      } catch {
+        onBuildLandingTypeChange();
+      }
+    }
+
+    function onBuildLandingTypeChange() {
+      const id = document.getElementById('buildLandingType').value;
+      const meta = buildLandingTypesCache.find((t) => t.id === id);
+      const hint = document.getElementById('buildLandingTypeHint');
+      if (meta) {
+        hint.textContent = meta.description;
+        if (!document.getElementById('buildPageTitle').dataset.userEdited) {
+          document.getElementById('buildPageTitle').value = meta.defaultTitle;
+        }
+        if (!document.getElementById('buildPageContext').dataset.userEdited) {
+          document.getElementById('buildPageContext').value = meta.defaultContext;
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const titleEl = document.getElementById('buildPageTitle');
+      const ctxEl = document.getElementById('buildPageContext');
+      if (titleEl) titleEl.addEventListener('input', () => { titleEl.dataset.userEdited = '1'; });
+      if (ctxEl) ctxEl.addEventListener('input', () => { ctxEl.dataset.userEdited = '1'; });
+    });
+
     function startAutonomousBuild() {
       const terminal = document.getElementById('build-terminal');
       terminal.innerHTML = '<div style="color: #6366f1;">[INFO] Iniciando compilación autónoma de landing-page...</div>';
       
+      const landingPageType = encodeURIComponent(document.getElementById('buildLandingType').value);
       const pageContext = encodeURIComponent(document.getElementById('buildPageContext').value);
       const pageTitle = encodeURIComponent(document.getElementById('buildPageTitle').value);
       
@@ -2030,7 +2082,7 @@
       const publishBranch = encodeURIComponent(document.getElementById('buildPublishBranch').value);
       const publishToken = encodeURIComponent(document.getElementById('buildPublishToken').value);
 
-      let url = `/api/run-build?pageContext=${pageContext}&pageTitle=${pageTitle}&assetOption=${assetOption}`;
+      let url = `/api/run-build?landingPageType=${landingPageType}&pageContext=${pageContext}&pageTitle=${pageTitle}&assetOption=${assetOption}`;
       if (assetOption === 'custom') {
         url += `&customAssetPath=${customAssetPath}`;
       }

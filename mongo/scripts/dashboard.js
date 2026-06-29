@@ -307,6 +307,23 @@ async function startServer(port = DEFAULT_PORT) {
         return;
       }
 
+      // 3e. GET /api/landing-page-types
+      if (url.pathname === "/api/landing-page-types" && method === "GET") {
+        const typesPath = join(runtimeCtx.architectureRepo || ARCHITECTURE_REPO, "cli", "landing-page-types.json");
+        let types = [{ id: "curriculum", label: "Currículum vitae", description: "Landing personal tipo CV", defaultTitle: "Mi Currículum", defaultContext: "Página profesional tipo curriculum vitae" }];
+        if (existsSync(typesPath)) {
+          try {
+            const registry = JSON.parse(readFileSync(typesPath, "utf8"));
+            types = registry.landingPageTypes ?? types;
+          } catch {
+            /* fallback */
+          }
+        }
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ types }));
+        return;
+      }
+
       // 4. GET /api/dashboard-summary
       if (url.pathname === "/api/dashboard-summary" && method === "GET") {
         const [sessions, sources, learnings, findings, closures] = await Promise.all([
@@ -526,6 +543,7 @@ async function startServer(port = DEFAULT_PORT) {
         const type = url.searchParams.get("type") || "landing-page";
         const args = ["cli/iatl-install.mjs", "--non-interactive", "--build", type];
 
+        const landingPageType = url.searchParams.get("landingPageType");
         const pageContext = url.searchParams.get("pageContext");
         const pageTitle = url.searchParams.get("pageTitle");
         const assetOption = url.searchParams.get("assetOption");
@@ -535,6 +553,7 @@ async function startServer(port = DEFAULT_PORT) {
         const publishBranch = url.searchParams.get("publishBranch");
         const publishToken = url.searchParams.get("publishToken");
 
+        if (landingPageType) args.push("--landing-page-type", landingPageType);
         if (pageContext) args.push("--page-context", pageContext);
         if (pageTitle) args.push("--page-title", pageTitle);
         if (assetOption) args.push("--asset-option", assetOption);
