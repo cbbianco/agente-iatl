@@ -2,7 +2,7 @@
 
 Documentación de la arquitectura de agentes IATL para **pfi-backend-core**.
 
-> **Importante:** Esta carpeta es una **copia de referencia** en el repo. Los artefactos operativos viven en `~/.cursor/` del desarrollador. No mover ni duplicar la fuente de verdad desde aquí salvo para documentar o versionar decisiones de diseño.
+> **Importante:** Esta carpeta es una **copia de referencia** en el repo. Los artefactos operativos se instalan en el directorio del **runtime activo** (`~/.antigravity/`, `~/.cursor/`, etc.) según el instalador. No mover ni duplicar la fuente de verdad desde aquí salvo para documentar o versionar decisiones de diseño.
 
 ## ¿Qué es IATL? (Inteligencia Artificial In the Loop)
 
@@ -17,15 +17,15 @@ A diferencia del enfoque tradicional de *Human-in-the-Loop* (donde la IA maneja 
 3. **@pfi-review-orchestrator**: El orquestador que gestiona el pipeline de revisiones automáticas (Code Reviewer y Bugbot).
 4. **Hub de Conocimiento Local (MongoDB + ChromaDB)**: Memoria operativa y semántica a largo plazo que retiene las decisiones de sprints anteriores y tus correcciones lógicas para mejorar la precisión del modelo en la siguiente sesión.
 5. **Construcción Autónoma de Habilidades (MCP)**: Generador autónomo de herramientas independientes bajo el estándar Model Context Protocol (como el MCP de Landing Pages), permitiendo que el sistema expanda dinámicamente sus capacidades lógicas y de despliegue.
-6. **Portal de Control Visual (GUI Wizard)**: Una interfaz moderna basada en Node.js, SSE y variables glassmorphism para parametrizar el entorno e interactuar visualmente con las construcciones del sistema.
+6. **Portal de Control Visual (Dashboard + GUI)** — Dashboard web (`npm run dashboard`) con métricas por proyecto, sesiones, construcción autónoma MCP y configuración HITL; GUI wizard en puerto 8020.
 
 ## Mapa de ubicaciones
 
-| Artefacto | Ubicación operativa | Copia doc en este repo |
-|-----------|---------------------|-------------------------|
-| Agentes | `~/.cursor/agents/` | [agents/](agents/) |
-| Skills | `~/.cursor/skills/` | [skills/](skills/) |
-| Hub Mongo | `~/.cursor/iatl-knowledge/` | [mongo/](mongo/) |
+| Artefacto | Ubicación operativa (según runtime) | Copia doc en este repo |
+|-----------|-------------------------------------|-------------------------|
+| Agentes | `~/.antigravity/agents/` o `~/.cursor/agents/` | [agents/](agents/) |
+| Skills | `~/.antigravity/skills/` o `~/.cursor/skills/` | [skills/](skills/) |
+| Hub Mongo | `~/.antigravity/iatl-knowledge/` o `~/.cursor/iatl-knowledge/` | [mongo/](mongo/) |
 | Spec-driven docs | `docs/spec-driven/` (repo) | [spec-driven/](spec-driven/) |
 
 ## Pipeline resumido
@@ -45,7 +45,7 @@ Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
 
 Ver [architecture/pipeline.md](architecture/pipeline.md).
 
-**Versión doc actual:** [0.12.0](CHANGELOG.md#0120--2026-06-28)
+**Versión doc actual:** [0.13.0](CHANGELOG.md#0130--2026-06-28)
 
 ## Resolución de tickets (MCP-first)
 
@@ -66,7 +66,17 @@ Ver [skills/pfi-ticket-source-resolver.md](skills/pfi-ticket-source-resolver.md)
 
 Guía completa paso a paso: **[docs/INSTALL.md](docs/INSTALL.md)** (requisitos, CLI, GUI, manual, Docker, verificación, troubleshooting).
 
-### Inicio rápido (Novedad: Portal GUI)
+### Dashboard IATL (métricas y construcción)
+
+```bash
+npm run dashboard
+# o forzar runtime Antigravity:
+node cli/run-dashboard.mjs --runtime antigravity
+```
+
+Abre `http://127.0.0.1:8030` — pestañas: Overview, Sesiones, Conocimiento, Agentes, **Construcción** (landing page), **Proyectos** (asignación HITL). Configuración desde el ícono ⚙️ en el sidebar (modal).
+
+### Inicio rápido (Portal GUI)
 
 Puedes instalar y configurar el entorno de forma completamente visual con nuestro nuevo portal web interactivo (diseño *glassmorphic* y logs en tiempo real):
 

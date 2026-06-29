@@ -5,6 +5,33 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.13.0] — 2026-06-28
+
+**Tema:** Dashboard IATL multi-runtime (Antigravity/Cursor/…) — métricas por proyecto, proyectos asignados, construcción autónoma y UX pegajosa.
+
+### Añadido
+
+- **`mongo/scripts/lib/runtime-context.js`** — resolución del runtime activo sin exponer rutas de otro IDE en logs ni API
+- **`mongo/projects.registry.json`** — presets de proyectos (pfi-backend-core, Engine Render) sin paths hardcodeados
+- **Dashboard — pestaña Proyectos** — vista de proyectos asignados con activación HITL vía modal
+- **Dashboard — pestaña Construcción** — wizard de landing page con SSE (`/api/run-build`)
+- **API** `/api/runtime-info`, `/api/assigned-projects`, `/api/project-presets` — contexto runtime y catálogo de proyectos
+- **Panel pegajoso inferior** (`sticky-ticket-drawer`) — detalle de ticket al hacer clic en sesiones o métricas
+
+### Cambiado
+
+- **Métricas por proyecto** — `ticket_metrics`, `ticket_closures` y `pattern_evals` filtrados por `config.project`; si no hay datos, `metricsSource: benchmark` con promedios históricos IATL (no mocks del proyecto)
+- **Configuración en modal** desde sidebar — el overview ya no ocupa espacio con el formulario de entorno
+- **`cli/run-dashboard.mjs`** — log sin rutas `~/.cursor/`; detecta hub del runtime (`--runtime antigravity`)
+- **`cli/lib/install-target.mjs`** — escribe `runtime.json` con `architectureRepo` y copia `projects.registry.json` al hub
+- **`README.md`** — mapa de ubicaciones agnóstico del IDE (`~/.antigravity/` / `~/.cursor/` según runtime)
+
+### Notas
+
+- Los datos Mongo son **compartidos entre IDEs** para el mismo proyecto; cada runtime muestra solo su etiqueta (Antigravity, Cursor, etc.) sin referenciar paths del otro entorno.
+
+---
+
 ## [0.12.0] — 2026-06-28
 
 **Tema:** Interfaz gráfica GUI (local web portal) + construcción autónoma MCP + retroalimentación de razonamiento HITL.

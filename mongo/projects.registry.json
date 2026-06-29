@@ -1,0 +1,22 @@
+{
+  "projects": [
+    {
+      "slug": "pfi-backend-core",
+      "label": "pfi-backend-core (Backend PFI)",
+      "projectContext": "Backend PFI: lambdas NestJS hexagonales, API Gateway, integración legacy Aduana",
+      "architectureCurrent": "layered",
+      "architectureTarget": "hexagonal-lambda-nestjs",
+      "retentionDays": 14,
+      "projectRootHint": "checkout local de pfi-backend-core"
+    },
+    {
+      "slug": "Engine Render",
+      "label": "Engine Render (Render Dinámico)",
+      "projectContext": "Render Dinámico Asistido por IA",
+      "architectureCurrent": "capas",
+      "architectureTarget": "capas",
+      "retentionDays": 2,
+      "projectRootHint": "checkout local de Engine-Render"
+    }
+  ]
+}

@@ -131,6 +131,12 @@ export function installArtifacts(runtimeTarget, projectRoot) {
   if (existsSync(join(REPO_ROOT, "mongo", "package.json"))) {
     copyFileSync(join(REPO_ROOT, "mongo", "package.json"), join(paths.hub, "package.json"));
   }
+  if (existsSync(join(REPO_ROOT, "mongo", "scripts", "projects.registry.json"))) {
+    copyFileSync(
+      join(REPO_ROOT, "mongo", "scripts", "projects.registry.json"),
+      join(paths.hub, "projects.registry.json"),
+    );
+  }
   if (existsSync(join(REPO_ROOT, "mongo", "config.example.json"))) {
     const example = join(REPO_ROOT, "mongo", "config.example.json");
     const dest = join(paths.hub, "config.example.json");
@@ -169,6 +175,7 @@ export function installArtifacts(runtimeTarget, projectRoot) {
     runtimeTarget,
     installedAt: new Date().toISOString(),
     repoVersion,
+    architectureRepo: REPO_ROOT,
     paths,
     projectRoot,
     hubPath: paths.hub,

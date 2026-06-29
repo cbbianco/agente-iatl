@@ -10,6 +10,19 @@ const __dirname = dirname(__filename);
 const REPO_ROOT = join(__dirname, "..");
 
 function findActiveHub() {
+  const runtimeArgIdx = process.argv.indexOf("--runtime");
+  const forcedRuntime = runtimeArgIdx !== -1 ? process.argv[runtimeArgIdx + 1] : null;
+
+  if (forcedRuntime && RUNTIME_PATHS[forcedRuntime]) {
+    const info = RUNTIME_PATHS[forcedRuntime];
+    const configPath = join(info.hub, "config.json");
+    const dashboardScript = join(info.hub, "dashboard.js");
+    if (existsSync(configPath) && existsSync(dashboardScript)) {
+      return { hubPath: info.hub, runtime: forcedRuntime, label: info.label };
+    }
+    console.warn(`⚠️ No se encontró hub activo para el runtime "${forcedRuntime}".`);
+  }
+
   const hubsFound = [];
   for (const [key, info] of Object.entries(RUNTIME_PATHS)) {
     const configPath = join(info.hub, "config.json");
@@ -19,27 +32,34 @@ function findActiveHub() {
       hubsFound.push({
         runtime: key,
         hubPath: info.hub,
+        label: info.label,
         mtime: stat.mtimeMs,
       });
     }
   }
-  
+
   if (hubsFound.length === 0) {
     return null;
   }
-  
-  // Sort by most recently modified config
+
   hubsFound.sort((a, b) => b.mtime - a.mtime);
-  return hubsFound[0].hubPath;
+  return hubsFound[0];
 }
 
-function launch(hubPath) {
-  console.log(`📡 Iniciando Dashboard de Control desde el Hub activo:`);
-  console.log(`👉 Ruta: ${hubPath}\n`);
+function launch(hubInfo) {
+  const { hubPath, runtime, label } = hubInfo;
+  console.log(`📡 Iniciando Dashboard IATL (${label})`);
+  console.log(`📦 Hub operativo del runtime seleccionado\n`);
+
+  const env = {
+    ...process.env,
+    IATL_ACTIVE_RUNTIME: runtime
+  };
 
   const proc = spawn(process.execPath, ["dashboard.js"], {
     cwd: hubPath,
     stdio: "inherit",
+    env
   });
 
   proc.on("error", (err) => {
@@ -66,11 +86,14 @@ function launchLocalFallback() {
     process.exit(1);
   }
 
-  console.log("⚠️ Advertencia: Ejecutando dashboard local de desarrollo (fallback)...");
-  launch(localHub);
+  console.log("⚠️ Ejecutando dashboard local de desarrollo (fallback)...");
+  launch({ hubPath: localHub, runtime: "vscode", label: "Desarrollo local" });
 }
 
 const activeHub = findActiveHub();
+const runtimeArgIdx = process.argv.indexOf("--runtime");
+const forcedRuntime = runtimeArgIdx !== -1 ? process.argv[runtimeArgIdx + 1] : null;
+
 if (activeHub) {
   launch(activeHub);
 } else {
