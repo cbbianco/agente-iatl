@@ -201,6 +201,51 @@ body {
   word-break: break-all;
 }
 
+.runtime-installed-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.runtime-ide-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.runtime-ide-badge-host {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.45);
+  color: #c7d2fe;
+}
+
+.runtime-badge-muted {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.runtime-install-banner {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+}
+
+.runtime-install-hint {
+  margin: 10px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
 /* Main content pane */
 .main-content {
   flex: 1;
@@ -1896,6 +1941,20 @@ select.form-control option,
   font-size: 0.82rem;
   color: var(--text-muted);
   margin-bottom: 14px;
+}
+
+.project-card-runtimes {
+  margin-bottom: 14px;
+}
+
+.project-card-runtimes-lbl {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
 }
 
 .btn-sm {

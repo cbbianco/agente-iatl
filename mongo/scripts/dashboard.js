@@ -28,6 +28,7 @@ import {
   BENCHMARK_TICKET_METRICS,
 } from "./lib/runtime-context.js";
 import { buildTicketInsights, isSessionActive } from "./lib/ticket-insights.js";
+import { buildInstallationSummary } from "./lib/installed-runtimes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -293,6 +294,11 @@ async function startServer(port = DEFAULT_PORT) {
       const config = loadConfig();
       const project = config.project ?? "pfi-backend-core";
       const runtimeCtx = resolveRuntimeContext();
+      const installationSummary = buildInstallationSummary(
+        HUB_ROOT,
+        runtimeCtx.runtimeTarget,
+        runtimeCtx.runtimeLabel,
+      );
 
       // 3. GET /api/config
       if (url.pathname === "/api/config" && method === "GET") {
@@ -303,6 +309,7 @@ async function startServer(port = DEFAULT_PORT) {
           runtimeLabel: runtimeCtx.runtimeLabel,
           hubScope: runtimeCtx.hubScope,
           ide: runtimeCtx.runtimeTarget,
+          ...installationSummary,
         }));
         return;
       }
@@ -315,6 +322,7 @@ async function startServer(port = DEFAULT_PORT) {
           runtimeLabel: runtimeCtx.runtimeLabel,
           hubScope: runtimeCtx.hubScope,
           project: runtimeCtx.project,
+          ...installationSummary,
         }));
         return;
       }
@@ -344,17 +352,25 @@ async function startServer(port = DEFAULT_PORT) {
           ...dbProjects.filter(Boolean),
           config.project,
         ]);
+        const projectsByRuntime = installationSummary.projectsByRuntime ?? {};
         const items = [...slugs].filter(Boolean).map((slug) => {
           const preset = registry.projects.find((p) => p.slug === slug);
+          const installedOn = projectsByRuntime[slug] ?? [];
           return {
             slug,
             label: preset?.label ?? slug,
             isActive: slug === config.project,
             hasPreset: Boolean(preset),
+            installedOn,
+            installedRuntimeLabels: installedOn.map((r) => r.label),
           };
         });
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ activeProject: config.project, projects: items }));
+        res.end(JSON.stringify({
+          activeProject: config.project,
+          projects: items,
+          ...installationSummary,
+        }));
         return;
       }
 

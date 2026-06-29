@@ -45,7 +45,7 @@ Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
 
 Ver [architecture/pipeline.md](architecture/pipeline.md).
 
-**Versión doc actual:** [0.13.3](CHANGELOG.md#0133--2026-06-29)
+**Versión doc actual:** [0.13.4](CHANGELOG.md#0134--2026-06-29)
 
 ## Resolución de tickets (MCP-first)
 
@@ -74,7 +74,7 @@ npm run dashboard
 node cli/run-dashboard.mjs --runtime antigravity
 ```
 
-Abre `http://127.0.0.1:8030` — pestañas: Overview, Sesiones, Conocimiento, Agentes (clic en tarjeta = explicación de métrica), **Construcción**, **Proyectos**. Configuración desde ⚙️ en sidebar.
+Abre `http://127.0.0.1:8030` — pestañas: Overview, Sesiones, Conocimiento, Agentes (clic en tarjeta = explicación de métrica), **Construcción**, **Proyectos** (muestra en qué IDEs está instalado cada proyecto). Sidebar: **Dashboard desde** + **IATL instalado en** (detección real de hubs). Configuración desde ⚙️ en sidebar.
 
 > Si IATL **no está instalado** para el runtime indicado, el launcher muestra un mensaje en terminal y una página informativa en el navegador con el comando de instalación. No se usa el hub de otro IDE como sustituto.
 

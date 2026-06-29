@@ -5,6 +5,22 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.13.4] — 2026-06-29
+
+**Tema:** IDEs reales donde está instalado IATL por proyecto.
+
+### Añadido
+
+- **`mongo/scripts/lib/installed-runtimes.js`** — escaneo de hubs operativos (Antigravity, Cursor, VS Code, etc.) leyendo `config.json` + `runtime.json`
+- **Sidebar** — “Dashboard desde” (IDE actual) e “IATL instalado en” (badges por hub detectado)
+- **Pestaña Proyectos** — cada tarjeta indica en qué IDEs tiene ese proyecto configurado como activo
+
+### Cambiado
+
+- **`/api/config`**, **`/api/runtime-info`** y **`/api/assigned-projects`** — incluyen `installedRuntimes`, `projectsByRuntime` y `installedOn` por proyecto
+
+---
+
 ## [0.13.3] — 2026-06-29
 
 **Tema:** Drawer de ticket coherente + explicación de métricas de agentes al clic.

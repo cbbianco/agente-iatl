@@ -53,7 +53,10 @@ export function resolveRuntimeContext() {
     config.ide ||
     detectIde(process.cwd());
 
-  const runtimeLabel = RUNTIME_LABELS[runtimeTarget] ?? ideLabel(runtimeTarget);
+  const runtimeLabel =
+    manifest.paths?.label ||
+    RUNTIME_LABELS[runtimeTarget] ||
+    ideLabel(runtimeTarget);
 
   let repoRoot = manifest.projectRoot ?? config.projectRoot ?? "";
   if (!repoRoot && config.projectRoot) {

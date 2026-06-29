@@ -63,8 +63,10 @@
       <div class="project-info-box">
         <span class="info-lbl">PROYECTO ACTIVO</span>
         <div id="project-slug-sidebar" class="info-val">cargando...</div>
-        <span class="info-lbl">ENTORNO RUNTIME</span>
-        <div id="runtime-sidebar" class="info-val">cargando...</div>
+        <span class="info-lbl">DASHBOARD DESDE</span>
+        <div id="runtime-sidebar-current" class="info-val">cargando...</div>
+        <span class="info-lbl">IATL INSTALADO EN</span>
+        <div id="runtime-sidebar-installed" class="runtime-installed-badges">cargando...</div>
       </div>
     </aside>
 
@@ -594,9 +596,10 @@
             <button class="btn btn-primary" onclick="openConfigModal()">Cambiar proyecto activo</button>
           </div>
           <p style="color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
-            Las métricas, sesiones y conocimiento del dashboard se filtran por el <strong>proyecto activo</strong>.
-            Los datos en Mongo son compartidos entre IDEs: puedes ver el mismo proyecto desde Antigravity, Cursor u otro runtime instalado.
+            Las métricas, sesiones y conocimiento del dashboard se filtran por el <strong>proyecto activo</strong> en el IDE desde el que abriste este dashboard.
+            Mongo es compartido: el mismo proyecto puede estar configurado en varios IDEs; abajo se muestra dónde está instalado IATL de forma real en tu máquina.
           </p>
+          <div id="runtime-install-summary" class="runtime-install-banner" style="display:none;"></div>
           <div id="assigned-projects-list" class="assigned-projects-grid">
             <div class="loading-spinner">Cargando proyectos...</div>
           </div>
@@ -832,6 +835,27 @@
       document.getElementById(`det-tab-${subTabId}`).classList.add('active');
     }
 
+    function renderRuntimeInstallationBadges(installations, { hostRuntime } = {}) {
+      if (!Array.isArray(installations) || installations.length === 0) {
+        return '<span class="runtime-badge-muted">Sin instalaciones detectadas</span>';
+      }
+      return installations.map((inst) => {
+        const isHost = inst.isDashboardHost || inst.runtime === hostRuntime;
+        const projectNote = inst.project ? ` · ${inst.project}` : '';
+        return `<span class="runtime-ide-badge ${isHost ? 'runtime-ide-badge-host' : ''}" title="Proyecto activo en este IDE${projectNote}">${inst.label}${isHost ? ' (este dashboard)' : ''}</span>`;
+      }).join('');
+    }
+
+    function renderProjectInstalledOn(installedOn, activeSlug) {
+      if (!Array.isArray(installedOn) || installedOn.length === 0) {
+        return '<span class="runtime-badge-muted">No detectado en ningún IDE local</span>';
+      }
+      return installedOn.map((r) => {
+        const isHost = r.isDashboardHost;
+        return `<span class="runtime-ide-badge ${isHost ? 'runtime-ide-badge-host' : ''}" title="Proyecto ${activeSlug} en ${r.label}">${r.label}${isHost ? ' · viendo aquí' : ''}</span>`;
+      }).join('');
+    }
+
     // Fetch Configurations
     function loadProjectConfig() {
       fetch('/api/config')
@@ -841,7 +865,12 @@
           
           // Populate UI
           document.getElementById('project-slug-sidebar').textContent = config.project || '-';
-          document.getElementById('runtime-sidebar').textContent = config.runtimeLabel || config.hubScope || config.runtimeTarget || 'IATL';
+          document.getElementById('runtime-sidebar-current').textContent =
+            config.currentRuntimeLabel || config.runtimeLabel || config.runtimeTarget || 'IATL';
+          document.getElementById('runtime-sidebar-installed').innerHTML = renderRuntimeInstallationBadges(
+            config.installedRuntimes || [],
+            { hostRuntime: config.dashboardHostRuntime || config.currentRuntime },
+          );
           document.getElementById('project-name-header').textContent = `Proyecto: ${config.project || 'Sin Nombre'}`;
           
           document.getElementById('sprint-badge').textContent = config.sprintActive 
@@ -1825,9 +1854,22 @@
 
     async function loadAssignedProjects() {
       const container = document.getElementById('assigned-projects-list');
+      const summaryBanner = document.getElementById('runtime-install-summary');
       try {
         const res = await fetch('/api/assigned-projects');
         const data = await res.json();
+
+        if (summaryBanner && Array.isArray(data.installedRuntimes) && data.installedRuntimes.length > 0) {
+          summaryBanner.style.display = 'block';
+          summaryBanner.innerHTML = `
+            <strong>Instalaciones IATL en este equipo</strong>
+            <div class="runtime-installed-badges" style="margin-top:10px;">
+              ${renderRuntimeInstallationBadges(data.installedRuntimes, { hostRuntime: data.dashboardHostRuntime })}
+            </div>
+            <p class="runtime-install-hint">Cada badge es un hub operativo real (config + dashboard). El proyecto activo en cada IDE aparece en la tarjeta del proyecto.</p>
+          `;
+        }
+
         if (!data.projects || data.projects.length === 0) {
           container.innerHTML = '<div class="table-empty">No hay proyectos registrados.</div>';
           return;
@@ -1836,13 +1878,18 @@
         data.projects.forEach((p) => {
           const card = document.createElement('div');
           card.className = `project-assignment-card ${p.isActive ? 'active' : ''}`;
+          const installedHtml = renderProjectInstalledOn(p.installedOn || [], p.slug);
           card.innerHTML = `
             <div class="project-card-header">
               <strong>${p.label || p.slug}</strong>
-              ${p.isActive ? '<span class="badge badge-success">Activo</span>' : ''}
+              ${p.isActive ? '<span class="badge badge-success">Activo en este dashboard</span>' : ''}
             </div>
             <p class="project-card-slug">${p.slug}</p>
-            ${!p.isActive ? `<button class="btn btn-secondary btn-sm" onclick="switchActiveProject('${p.slug.replace(/'/g, "\\'")}')">Activar</button>` : '<span class="text-muted">Proyecto en uso por este runtime</span>'}
+            <div class="project-card-runtimes">
+              <span class="project-card-runtimes-lbl">Instalado en</span>
+              <div class="runtime-installed-badges">${installedHtml}</div>
+            </div>
+            ${!p.isActive ? `<button class="btn btn-secondary btn-sm" onclick="switchActiveProject('${p.slug.replace(/'/g, "\\'")}')">Activar aquí</button>` : '<span class="text-muted">Proyecto en uso en el IDE de este dashboard</span>'}
           `;
           container.appendChild(card);
         });
