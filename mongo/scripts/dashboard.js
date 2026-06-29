@@ -726,6 +726,126 @@ async function startServer(port = DEFAULT_PORT) {
         return;
       }
 
+      // 13. GET/POST /api/standards
+      if (url.pathname === "/api/standards") {
+        const stdPath = join(HUB_ROOT, "standards.json");
+        if (method === "GET") {
+          let data = { commits: "", branches: "", cr: "" };
+          if (existsSync(stdPath)) {
+            try { data = JSON.parse(readFileSync(stdPath, "utf8")); } catch (e) {}
+          }
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(data));
+          return;
+        } else if (method === "POST") {
+          let body = "";
+          req.on("data", chunk => body += chunk);
+          req.on("end", () => {
+            try {
+              const data = JSON.parse(body);
+              writeFileSync(stdPath, JSON.stringify(data, null, 2));
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+              res.writeHead(500, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: err.message }));
+            }
+          });
+          return;
+        }
+      }
+
+      // 14. POST /api/agent-loop/cv
+      if (url.pathname === "/api/agent-loop/cv" && method === "POST") {
+        let body = "";
+        req.on("data", chunk => body += chunk);
+        req.on("end", async () => {
+          try {
+            const data = JSON.parse(body);
+            let pdfBuffer;
+            if (data.cvBase64) {
+              pdfBuffer = Buffer.from(data.cvBase64, "base64");
+            } else if (data.cvUrl) {
+              const reqRes = await fetch(data.cvUrl);
+              const ab = await reqRes.arrayBuffer();
+              pdfBuffer = Buffer.from(ab);
+            } else {
+              throw new Error("No se proporcionó CV local ni URL");
+            }
+
+            let pdfParse;
+            try {
+              const mod = await import("pdf-parse");
+              pdfParse = mod.default || mod;
+            } catch (e) {
+              throw new Error("El módulo pdf-parse no está instalado. Ejecuta npm i pdf-parse");
+            }
+            const pdfData = await pdfParse(pdfBuffer);
+            const textContent = pdfData.text.replace(/\n/g, "<br/>");
+
+            // Generación de preview (Mock Agente Daniel y Developer)
+            const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CV Landing Page - Autónoma</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 0; }
+    .container { max-width: 800px; margin: 40px auto; background: #1e293b; padding: 40px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); border: 1px solid #334155; }
+    h1 { color: #38bdf8; font-size: 2.5rem; text-align: center; margin-bottom: 10px; }
+    .badge { display: inline-block; background: #047857; color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+    .content { line-height: 1.8; font-size: 1.05rem; background: rgba(0,0,0,0.2); padding: 25px; border-radius: 8px; border-left: 4px solid #38bdf8; }
+    .agent-footer { margin-top: 40px; text-align: center; font-size: 0.85rem; color: #94a3b8; border-top: 1px solid #334155; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div style="text-align: center;">
+      <span class="badge">IATL CV Generado</span>
+    </div>
+    <h1>${data.type === 'curriculum' ? 'Mi Portafolio Profesional' : 'Landing Page'}</h1>
+    <div style="text-align:center; color:#94a3b8; margin-bottom: 30px;">
+      <i>Contexto dado al agente: ${data.context || 'Ninguno'}</i>
+    </div>
+    <div class="content">
+      <h3 style="color:#fff; margin-top:0;">Extracto analizado del PDF:</h3>
+      ${textContent}
+    </div>
+    <div class="agent-footer">
+      Generado autónomamente por Agentes IATL. Salud del código validada por Agente CR.
+    </div>
+  </div>
+</body>
+</html>`;
+            
+            writeFileSync(join(HUB_ROOT, "preview-cv.html"), html);
+
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ success: true, message: "CV procesado y generado." }));
+          } catch (err) {
+            res.writeHead(500, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: err.message }));
+          }
+        });
+        return;
+      }
+
+      // 15. GET /preview/cv
+      if (url.pathname === "/preview/cv" && method === "GET") {
+        const previewPath = join(HUB_ROOT, "preview-cv.html");
+        if (existsSync(previewPath)) {
+          const html = readFileSync(previewPath, "utf8");
+          res.writeHead(200, { "Content-Type": "text/html" });
+          res.end(html);
+        } else {
+          res.writeHead(404, { "Content-Type": "text/html" });
+          res.end("<h1>404 - Preview no generado aún.</h1>");
+        }
+        return;
+      }
+
       // Route not found
       res.writeHead(404, { "Content-Type": "text/plain" });
       res.end("404 Recurso No Encontrado");

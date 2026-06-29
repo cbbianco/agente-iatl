@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 </head>
 <body>
   <!-- Ambient background glows -->
@@ -53,6 +54,10 @@
         <button id="nav-btn-projects" class="nav-item" onclick="switchTab('projects')">
           <span class="nav-icon">📁</span>
           <span class="nav-text">Proyectos</span>
+        </button>
+        <button id="nav-btn-standards" class="nav-item" onclick="switchTab('standards')">
+          <span class="nav-icon">📏</span>
+          <span class="nav-text">Estándares</span>
         </button>
         <button id="nav-btn-config" class="nav-item" onclick="openConfigModal()" style="margin-top: 15px; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 12px;">
           <span class="nav-icon">⚙️</span>
@@ -471,6 +476,35 @@
           <div class="agents-grid" id="agents-cards-container">
             <!-- Agent Cards injected here -->
           </div>
+          
+          <div style="margin-top: 40px; padding-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+            <h4 style="margin-bottom: 20px; font-family: 'Outfit'; font-size: 1.15rem; color: var(--text-main);">Flujo de Trabajo e Interacción de Agentes (Construcción Autónoma)</h4>
+            <div style="background: var(--card-bg); padding: 20px; border-radius: 12px; border: 1px solid var(--border); display: flex; justify-content: center;">
+              <pre class="mermaid" style="background: transparent;">
+graph TD
+    User([Humano / Usuario]) -->|Define Requisitos| IATL[Agente IATL &lt;br/&gt; Role: HITL Manager]
+    IATL -->|Delega Tareas| Daniel[Agente Daniel &lt;br/&gt; Role: Análisis y Diseño]
+    
+    Daniel -.->|Propone Solución| IATL
+    
+    IATL -->|Solicita Implementación| IATL_Dev[Agente IATL &lt;br/&gt; Role: Developer]
+    IATL_Dev -->|Genera Código| CR[Agente CR &lt;br/&gt; Role: Code Reviewer]
+    
+    CR -.->|Reporte de Salud / Bugs| IATL
+    
+    IATL -- Verifica Salud Verde --&gt; Accept((Aceptación &lt;br/&gt; Final))
+    IATL -. Rechaza y redefine .-> Daniel
+    
+    style User fill:#05070f,stroke:#fff,stroke-width:2px,color:#fff
+    style IATL fill:#2e1065,stroke:#7c3aed,stroke-width:2px,color:#fff
+    style Daniel fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff
+    style IATL_Dev fill:#1e3a8a,stroke:#3b82f6,stroke-width:2px,color:#fff
+    style CR fill:#7f1d1d,stroke:#ef4444,stroke-width:2px,color:#fff
+    style Accept fill:#4c1d95,stroke:#a78bfa,stroke-width:2px,color:#fff
+              </pre>
+            </div>
+            <p class="field-hint" style="margin-top: 15px; text-align: center;">El agente IATL asume el rol del Human-in-the-Loop (HITL) durante la generación autónoma, iterando con los demás agentes hasta obtener un reporte de salud verde antes de aceptar el código.</p>
+          </div>
         </div>
       </section>
 
@@ -489,9 +523,37 @@
             </div>
 
             <form id="build-wizard-form" onsubmit="event.preventDefault();">
-              <!-- STEP 1: Detalles de la página -->
+              <!-- STEP 1: Detalles de la página y PDF -->
               <div class="wizard-step active" id="build-step-1">
-                <h4 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 1: Tipo y contenido de la Landing</h4>
+                <h4 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 1: Currículum y Contenido</h4>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                  <label class="form-label" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Carga de Currículum (PDF requerido)</label>
+                  
+                  <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 12px;">
+                    <div class="checkbox-group" style="display: flex; align-items: center; gap: 10px;">
+                      <input type="radio" name="buildCvSource" id="cvSourceLocal" value="local" checked onchange="toggleCvSourceFields()" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+                      <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="cvSourceLocal">Subir archivo local</label>
+                    </div>
+                    <div class="checkbox-group" style="display: flex; align-items: center; gap: 10px;">
+                      <input type="radio" name="buildCvSource" id="cvSourceUrl" value="url" onchange="toggleCvSourceFields()" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
+                      <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="cvSourceUrl">URL del documento</label>
+                    </div>
+                  </div>
+
+                  <div id="cv-local-upload-group">
+                    <div style="border: 2px dashed rgba(255,255,255,0.1); padding: 25px; border-radius: 12px; text-align: center; background: rgba(0,0,0,0.2);">
+                      <input type="file" id="buildCvFile" accept="application/pdf" style="display: none;" onchange="updateCvFileName(this)">
+                      <label for="buildCvFile" class="btn btn-secondary" style="cursor: pointer; display: inline-block;">Seleccionar PDF</label>
+                      <p id="cv-file-name" style="margin-top: 10px; font-size: 0.85rem; color: var(--text-muted);">Ningún archivo seleccionado</p>
+                    </div>
+                  </div>
+
+                  <div id="cv-url-upload-group" style="display: none;">
+                    <input type="url" class="form-control" id="buildCvUrl" style="width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: 8px; color: #ffffff;" placeholder="https://ejemplo.com/mi-cv.pdf">
+                  </div>
+                </div>
+
                 <div class="form-group" style="margin-bottom: 20px;">
                   <label class="form-label" for="buildLandingType">Tipo de Landing Page</label>
                   <select id="buildLandingType" class="form-control select-control" onchange="onBuildLandingTypeChange()" required>
@@ -500,32 +562,53 @@
                   <p id="buildLandingTypeHint" class="field-hint">Landing personal tipo CV: perfil, experiencia, educación y contacto.</p>
                 </div>
                 <div class="form-group" style="margin-bottom: 20px;">
-                  <label class="form-label" for="buildPageContext">Contexto de la Página</label>
-                  <textarea class="form-control" id="buildPageContext" rows="3" placeholder="Describe el propósito de la página">Página profesional tipo curriculum vitae para presentar trayectoria, habilidades técnicas y datos de contacto</textarea>
-                </div>
-                <div class="form-group" style="margin-bottom: 20px;">
-                  <label class="form-label" for="buildPageTitle">Título de la Página</label>
-                  <input type="text" class="form-control" id="buildPageTitle" value="Mi Currículum" placeholder="ej. Mi Currículum">
+                  <label class="form-label" for="buildPageContext">Instrucciones Adicionales</label>
+                  <textarea class="form-control" id="buildPageContext" rows="3" placeholder="Ej. Resalta mi experiencia en la nube y añade un tono moderno.">Analizar el PDF provisto, aplicar diseño vibrante con modo oscuro, y seguir métricas de salud de código estrictas.</textarea>
                 </div>
               </div>
 
-              <!-- STEP 2: Selección de Assets -->
+              <!-- STEP 2: Generación Autónoma y Preview -->
               <div class="wizard-step" id="build-step-2" style="display: none;">
-                <h4 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 2: Selección de Assets</h4>
-                <div class="form-group" style="margin-bottom: 20px;">
-                  <label class="form-label" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Estilo y HTML de base</label>
-                  <div class="checkbox-group" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                    <input type="radio" name="buildAssetOption" id="buildAssetGenerate" value="generate" checked onchange="toggleBuildCustomAssetField()" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
-                    <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="buildAssetGenerate">Generar asset apropiado al desarrollo (Autónomo)</label>
+                <h4 style="margin-bottom: 15px; font-family:'Outfit'; font-size: 1.15rem; color:#ffffff;">Paso 2: Iteración de Agentes y Preview</h4>
+                
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="font-weight: 600; color: var(--text-main);">Estado del Workflow Autónomo</span>
+                    <span id="workflow-status-badge" class="badge badge-neutral">Pendiente</span>
                   </div>
-                  <div class="checkbox-group" style="display: flex; align-items: center; gap: 10px;">
-                    <input type="radio" name="buildAssetOption" id="buildAssetCustom" value="custom" onchange="toggleBuildCustomAssetField()" style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;">
-                    <label class="form-label" style="margin-bottom:0; cursor:pointer;" for="buildAssetCustom">Usar un asset de estilos/HTML específico</label>
+                  
+                  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; text-align: center;">
+                    <div style="padding: 15px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                      <div style="font-size: 1.5rem; margin-bottom: 8px;">1️⃣</div>
+                      <div style="font-size: 0.85rem; font-weight: 600;">Daniel analiza PDF</div>
+                    </div>
+                    <div style="padding: 15px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                      <div style="font-size: 1.5rem; margin-bottom: 8px;">2️⃣</div>
+                      <div style="font-size: 0.85rem; font-weight: 600;">CR revisa Salud</div>
+                    </div>
+                    <div style="padding: 15px; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                      <div style="font-size: 1.5rem; margin-bottom: 8px;">3️⃣</div>
+                      <div style="font-size: 0.85rem; font-weight: 600;">IATL acepta</div>
+                    </div>
+                  </div>
+
+                  <div style="margin-top: 25px; text-align: center;">
+                    <button type="button" class="btn btn-secondary" id="btn-run-agent-loop" onclick="startAutonomousAgentLoop()" style="width: 100%;">
+                      <span>⚡</span> Ejecutar Bucle de Agentes
+                    </button>
                   </div>
                 </div>
-                <div class="form-group" id="build-custom-asset-path-group" style="display: none; margin-bottom: 20px;">
-                  <label class="form-label" for="buildCustomAssetPath" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Ruta del Asset Específico</label>
-                  <input type="text" class="form-control" id="buildCustomAssetPath" style="width: 100%; padding: 12px 16px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: 8px; color: #ffffff; font-family: inherit; font-size: 0.92rem; transition: var(--transition);" placeholder="ej. mcp-landing-page/assets/custom-styles.css">
+
+                <div id="preview-section" style="display: none; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
+                  <h5 style="margin-bottom: 10px; font-weight: 600; font-size: 0.95rem;">Resultado del Agente IATL:</h5>
+                  <div style="display: flex; gap: 15px;">
+                    <button type="button" class="btn btn-primary" onclick="openPreviewTab()" style="flex: 1;">
+                      <span>👁️</span> Abrir Preview
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="buildWizardNext()" style="flex: 1;" id="btn-accept-preview">
+                      <span>✅</span> Aceptar (Salud Verde)
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -603,6 +686,42 @@
           <div id="assigned-projects-list" class="assigned-projects-grid">
             <div class="loading-spinner">Cargando proyectos...</div>
           </div>
+        </div>
+      </section>
+
+      <!-- TAB 7: STANDARDS -->
+      <section id="tab-standards" class="tab-pane">
+        <div class="panel">
+          <div class="panel-header-actions" style="margin-bottom: 20px;">
+            <h3 class="panel-title" style="margin-bottom:0;"><span>📏</span> Estándares del Proyecto</h3>
+          </div>
+          <p style="color: var(--text-muted); margin-bottom: 20px; line-height: 1.5;">
+            Define los estándares del equipo. Esta información se inyectará directamente en el contexto de los agentes durante la iteración autónoma y revisiones de código.
+          </p>
+
+          <form id="form-standards" onsubmit="saveStandards(event)">
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label class="form-label" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Estándar de Commits</label>
+              <textarea id="std-commits" class="form-control" rows="4" placeholder="Ej. Usar Conventional Commits (feat:, fix:, chore:)">Usar Conventional Commits. Mensajes imperativos. Límite de 72 caracteres.</textarea>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label class="form-label" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Estándar de Ramas</label>
+              <textarea id="std-branches" class="form-control" rows="3" placeholder="Ej. feature/PFI-XXX-descripción">Nomenclatura: feature/ISSUE-ID-resumen, bugfix/ISSUE-ID-resumen.</textarea>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+              <label class="form-label" style="display: block; font-size: 0.88rem; font-weight: 600; color: var(--text); margin-bottom: 8px;">Criterios de Code Review (Salud del Código)</label>
+              <textarea id="std-cr" class="form-control" rows="5" placeholder="Ej. Respetar SOLID, sin código duplicado.">1. Complejidad ciclomática menor a 10.
+2. Cumplimiento estricto de SOLID.
+3. Tipado fuerte.
+4. Cero código duplicado. (Verde = Aceptado por IATL)</textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+              <button type="submit" class="btn btn-primary" id="btn-save-standards">Guardar Estándares</button>
+            </div>
+          </form>
         </div>
       </section>
     </main>
@@ -814,11 +933,14 @@
         loadTicketMetrics();
       } else if (tabId === 'agents') {
         loadAgentPerformance();
+        if (typeof mermaid !== 'undefined') mermaid.init(undefined, document.querySelectorAll('.mermaid'));
       } else if (tabId === 'build') {
         updateBuildWizardProgress();
         loadLandingPageTypes();
       } else if (tabId === 'projects') {
         loadAssignedProjects();
+      } else if (tabId === 'standards') {
+        loadStandards();
       }
     }
 
@@ -2145,6 +2267,140 @@
       } else {
         startAutonomousBuild();
       }
+    }
+
+    // --- CV Upload logic ---
+    function toggleCvSourceFields() {
+      const isUrl = document.getElementById('cvSourceUrl').checked;
+      document.getElementById('cv-local-upload-group').style.display = isUrl ? 'none' : 'block';
+      document.getElementById('cv-url-upload-group').style.display = isUrl ? 'block' : 'none';
+    }
+
+    function updateCvFileName(input) {
+      const label = document.getElementById('cv-file-name');
+      if (input.files && input.files.length > 0) {
+        label.textContent = input.files[0].name;
+        label.style.color = "var(--success)";
+      } else {
+        label.textContent = "Ningún archivo seleccionado";
+        label.style.color = "var(--text-muted)";
+      }
+    }
+
+    // --- Agent Loop Logic ---
+    function startAutonomousAgentLoop() {
+      const badge = document.getElementById('workflow-status-badge');
+      const btn = document.getElementById('btn-run-agent-loop');
+      const previewSection = document.getElementById('preview-section');
+      
+      badge.className = 'badge badge-accent';
+      badge.textContent = 'Iterando...';
+      btn.disabled = true;
+      btn.innerHTML = '<span>⏳</span> Agentes trabajando...';
+      previewSection.style.display = 'none';
+
+      const payload = {
+        type: document.getElementById('buildLandingType').value,
+        context: document.getElementById('buildPageContext').value
+      };
+      
+      const isLocal = document.getElementById('cvSourceLocal').checked;
+      
+      const executeRequest = (jsonPayload) => {
+        fetch('/api/agent-loop/cv', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(jsonPayload)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            badge.className = 'badge badge-success';
+            badge.textContent = 'Salud Verde - Completado';
+            previewSection.style.display = 'block';
+            showToast('Ciclo autónomo completado con éxito.');
+          } else {
+            badge.className = 'badge badge-danger';
+            badge.textContent = 'Error';
+            showToast(data.error || 'Error en el workflow', 'error');
+          }
+        })
+        .catch(err => {
+          badge.className = 'badge badge-danger';
+          badge.textContent = 'Falló';
+          showToast('Falla en la comunicación con agentes', 'error');
+        })
+        .finally(() => {
+          btn.disabled = false;
+          btn.innerHTML = '<span>⚡</span> Re-ejecutar Bucle';
+        });
+      };
+
+      if (isLocal) {
+        const fileInput = document.getElementById('buildCvFile');
+        if (fileInput.files.length > 0) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            payload.cvBase64 = e.target.result.split(',')[1];
+            executeRequest(payload);
+          };
+          reader.readAsDataURL(fileInput.files[0]);
+        } else {
+          showToast('Debes seleccionar un PDF.', 'error');
+          btn.disabled = false;
+          btn.innerHTML = '<span>⚡</span> Re-ejecutar Bucle';
+        }
+      } else {
+        payload.cvUrl = document.getElementById('buildCvUrl').value;
+        executeRequest(payload);
+      }
+    }
+
+    function openPreviewTab() {
+      window.open('/preview/cv', '_blank');
+    }
+
+    // --- Standards Logic ---
+    function loadStandards() {
+      fetch('/api/standards')
+        .then(res => res.json())
+        .then(data => {
+          if (data.commits) document.getElementById('std-commits').value = data.commits;
+          if (data.branches) document.getElementById('std-branches').value = data.branches;
+          if (data.cr) document.getElementById('std-cr').value = data.cr;
+        })
+        .catch(err => console.error("Error loading standards:", err));
+    }
+
+    function saveStandards(e) {
+      if (e) e.preventDefault();
+      const btn = document.getElementById('btn-save-standards');
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      const payload = {
+        commits: document.getElementById('std-commits').value,
+        branches: document.getElementById('std-branches').value,
+        cr: document.getElementById('std-cr').value
+      };
+
+      fetch('/api/standards', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error('Error guardando estándares');
+        return res.json();
+      })
+      .then(() => {
+        showToast('Estándares guardados (Inyectados en agentes).');
+      })
+      .catch(err => showToast(err.message, 'error'))
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = 'Guardar Estándares';
+      });
     }
 
     function toggleBuildCustomAssetField() {

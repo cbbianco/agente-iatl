@@ -2,3 +2,5 @@ chroma_local/venv/
 chroma_local/**/__pycache__/
 *.pyc
 .DS_Store
+node_modules/
+mongo/node_modules/

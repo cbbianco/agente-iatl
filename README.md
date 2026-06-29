@@ -45,7 +45,7 @@ Ticket → @iatl arranque (Mongo ticket + working_branches + active-tickets)
 
 Ver [architecture/pipeline.md](architecture/pipeline.md).
 
-**Versión doc actual:** [0.13.4](CHANGELOG.md#0134--2026-06-29)
+**Versión doc actual:** [0.13.5](CHANGELOG.md#0135--2026-06-29)
 
 ## Resolución de tickets (MCP-first)
 

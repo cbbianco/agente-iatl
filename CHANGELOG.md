@@ -5,6 +5,24 @@ Versionado semántico aproximado según commits del repo.
 
 ---
 
+## [0.13.5] — 2026-06-29
+
+**Tema:** Construcción Autónoma de CVs (PDF) con Workflow Agentes, Diagramas HITL y Detección Dinámica de Entornos.
+
+### Añadido
+
+- **Workflow Autónomo (Tab Construcción)** — Carga de currículums (PDF local o URL), extracción de texto (vía `pdf-parse`) e iteración de agentes (análisis de Daniel, revisión de CR y aceptación por IATL).
+- **Vista Previa de Generación (Preview)** — Nueva pestaña en `/preview/cv` para visualizar la Landing Page generada antes de su despliegue final.
+- **Sección de Estándares (Nueva Pestaña)** — Interfaz para definir y guardar estándares de commits, ramas y Criterios de Salud de Code Review (`standards.json`). Estos alimentan el contexto de los agentes.
+- **Diagrama de Interacción de Agentes (Mermaid)** — Visualización arquitectónica del rol de IATL como HITL Manager frente a Daniel y CR en la pestaña de Agentes.
+
+### Cambiado
+
+- **Detección Dinámica de Entorno (IDE)** — Refactorizadas las funciones `detectPreferredRuntime` y `detectIde` en `cli/lib/runtime-install.mjs` y `mongo/scripts/lib/ide-detect.js`. Ahora se implementa un rastreo robusto y real del árbol de procesos (Process Tree) del sistema (`getIdeFromProcessTree`), evitando que el dashboard adivine el entorno de forma incorrecta basándose en variables residuales.
+- **`mongo/scripts/dashboard.js`** — Incorporación nativa de validación JSON y carga de base64 para evitar el uso forzado de frameworks externos como Express y mantener la naturaleza raw-HTTP del dashboard.
+
+---
+
 ## [0.13.4] — 2026-06-29
 
 **Tema:** IDEs reales donde está instalado IATL por proyecto.
